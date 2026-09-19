@@ -1,0 +1,107 @@
+{
+  "arch": {
+    "seq_len": 48,
+    "n_fea": 9,
+    "hidden": 32,
+    "persistence_skip": true,
+    "horizon": 12
+  },
+  "delta_shrink_alpha": 0.8500000000000001,
+  "delta_l2": 0.0,
+  "split": {
+    "train": 982,
+    "valid": 211,
+    "test": 211,
+    "stride": 3,
+    "train_nodes": 400,
+    "all_nodes": 1423
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.029070720424860474,
+      "valid_mae": 0.08971908688545227,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.02125430415286039,
+      "valid_mae": 0.08637630939483643,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.019623988580594703,
+      "valid_mae": 0.08492261916399002,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.01886663574543668,
+      "valid_mae": 0.08740533888339996,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.018646670376685093,
+      "valid_mae": 0.0880778580904007,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.018566156979801695,
+      "valid_mae": 0.08400430530309677,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.018514423305547336,
+      "valid_mae": 0.08594498038291931,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.01840024885941085,
+      "valid_mae": 0.0837380588054657,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.01842149560589616,
+      "valid_mae": 0.08800666779279709,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.018183380706099476,
+      "valid_mae": 0.08578533679246902,
+      "valid_mae_persistence": 0.10437003523111343
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.018211441182690424,
+      "valid_mae": 0.08716749399900436,
+      "valid_mae_persistence": 0.10437003523111343
+    }
+  ],
+  "valid": {
+    "mae_persistence": 0.10058466345071793,
+    "rmse_persistence": 0.1811017543077469,
+    "mae_roll24": 0.08457563072443008,
+    "mae_global": 0.20317727327346802,
+    "mae_lstm": 0.08036290109157562,
+    "rmse_lstm": 0.12732739746570587,
+    "gain_pct": 20.10422033081622
+  },
+  "test": {
+    "mae_persistence": 0.1008169949054718,
+    "rmse_persistence": 0.1905812919139862,
+    "mae_roll24": 0.08011510223150253,
+    "mae_global": 0.20785026252269745,
+    "mae_lstm": 0.07900718599557877,
+    "rmse_lstm": 0.12678638100624084,
+    "gain_pct": 21.63306784768023
+  },
+  "saved": "C:\\Users\\33458\\Desktop\\digital_twin_tool\\checkpoints\\station_lstm.pth",
+  "elapsed_sec": 2443.4
+}

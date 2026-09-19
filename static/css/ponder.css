@@ -1,0 +1,557 @@
+/* ============================================================================
+ * static/css/ponder.css
+ * 「思索」覆盖层 —— 分镜墙（Storyboard）版
+ * 布局参考 Minecraft Create 的 Ponder：并排若干分镜格，主轴贯穿全流程，
+ * 当前格高亮播放，其余格定格为"前情 / 后续"。
+ * 配色对齐项目主题（.streamlit/config.toml: bg #0a0e17 / primary #4a90d9）
+ * ========================================================================== */
+
+/* 覆盖层铺满 iframe 视口。
+   之前是 absolute inset:0 —— 只覆盖场景容器（Streamlit 三栏布局下
+   只有中间一栏约 800px），分镜墙被硬塞进这个宽度，每格只剩 100px。
+   改用 fixed 让它独占整个视口，分镜才有地方展开。 */
+#ponder-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+  color: #eef2ff;
+  animation: pd-fade-in 0.22s ease-out;
+}
+@keyframes pd-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+#ponder-overlay .pd-backdrop {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(10, 14, 23, 0.9) 0%, rgba(4, 6, 10, 0.98) 100%);
+  backdrop-filter: blur(6px);
+}
+
+#ponder-overlay .pd-frame {
+  position: fixed;
+  inset: 14px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #1e3450;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(10, 14, 23, 0.82);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(120, 170, 255, 0.08);
+}
+
+/* ---------- 顶栏 ---------- */
+#ponder-overlay .pd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  border-bottom: 1px solid #16283c;
+  background: linear-gradient(180deg, rgba(30, 44, 66, 0.55), rgba(10, 14, 23, 0.2));
+  flex: 0 0 auto;
+}
+#ponder-overlay .pd-title { display: flex; align-items: center; gap: 11px; min-width: 0; }
+#ponder-overlay .pd-title-icon { font-size: 20px; filter: drop-shadow(0 0 10px rgba(201, 162, 39, 0.55)); }
+#ponder-overlay .pd-title-main { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
+#ponder-overlay .pd-title-sub {
+  font-size: 11px; color: #7d8ca6; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#ponder-overlay .pd-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+#ponder-overlay .pd-btn {
+  background: rgba(30, 44, 66, 0.7);
+  border: 1px solid #24405f;
+  color: #b9c9e0;
+  padding: 5px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#ponder-overlay .pd-btn:hover {
+  background: rgba(74, 144, 217, 0.22);
+  border-color: #4a90d9;
+  color: #eef2ff;
+}
+
+/* ---------- 分镜舞台 ---------- */
+#ponder-overlay .pd-stage {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+  padding: 12px;
+}
+
+/* 分镜带：横向滚动的胶片条，当前格居中。
+   为什么不用等宽网格：6 格摊在一屏里每格只剩 100px 左右，
+   3D 装置会缩成一小团、标签互相重叠 —— 那样就失去教学意义了。
+   宁可让用户横向滚动，也要保证每格住得下。 */
+#ponder-overlay .pd-panelwrap {
+  --pd-cell-w: 380px;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 2px 4px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #24405f transparent;
+}
+#ponder-overlay .pd-panelwrap::-webkit-scrollbar { height: 6px; }
+#ponder-overlay .pd-panelwrap::-webkit-scrollbar-thumb {
+  background: #24405f; border-radius: 3px;
+}
+#ponder-overlay .pd-panelwrap::-webkit-scrollbar-track { background: transparent; }
+
+#ponder-overlay .pd-panel {
+  flex: 0 0 var(--pd-cell-w);
+  width: var(--pd-cell-w);
+  min-width: 0;
+  position: relative;
+  border: 1px solid #1e3450;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #080b12;
+  transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
+}
+/* 非当前格压暗：形成"前情/后续"的观感。
+   注意别压太狠 —— 分镜墙的价值就在于"一眼看全流程"，
+   压到看不清就退化成普通播放器了。 */
+#ponder-overlay .pd-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 9, 14, 0.42);
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+#ponder-overlay .pd-panel.is-active {
+  border-color: #4a90d9;
+  /* 当前格"立起来"：外发光 + 轻上浮，一眼能看出焦点在哪一镜 */
+  box-shadow: 0 0 0 1px rgba(74, 144, 217, 0.65),
+              0 0 34px rgba(74, 144, 217, 0.42),
+              0 10px 28px rgba(0, 0, 0, 0.5);
+  transform: translateY(-4px);
+  z-index: 2;
+}
+#ponder-overlay .pd-panel.is-active::after { opacity: 0; }
+#ponder-overlay .pd-panel.is-done { border-color: #2c4a6a; }
+/* 非当前格轻微降饱和，突出焦点但不至于看不清 */
+#ponder-overlay .pd-panel:not(.is-active) canvas { filter: saturate(0.72); }
+
+#ponder-overlay .pd-panel-stage {
+  position: absolute;
+  inset: 0;
+}
+#ponder-overlay .pd-panel-stage canvas { display: block; width: 100% !important; height: 100% !important; }
+
+#ponder-overlay .pd-panel-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 分镜说明：左上角序号 + 短标签 */
+#ponder-overlay .pd-panel-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  background: rgba(8, 12, 20, 0.86);
+  border: 1px solid #24405f;
+  pointer-events: none;
+  max-width: calc(100% - 16px);
+}
+#ponder-overlay .pd-panel-no {
+  flex: 0 0 auto;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #24405f;
+  color: #cfe0f5;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+#ponder-overlay .pd-panel.is-active .pd-panel-no { background: #4a90d9; color: #fff; }
+#ponder-overlay .pd-panel.is-done .pd-panel-no { background: rgba(81, 207, 102, 0.35); color: #a8f0b8; }
+#ponder-overlay .pd-panel-short {
+  font-size: 11px;
+  color: #cfe0f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 悬停显示要点（省地方，同时不干扰当前格） */
+#ponder-overlay .pd-panel-hover {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  right: 8px;
+  z-index: 6;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(8, 12, 20, 0.9);
+  border-left: 3px solid #4a90d9;
+  font-size: 10.5px;
+  color: #a9bad3;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.18s, transform 0.18s;
+  pointer-events: none;
+}
+#ponder-overlay .pd-panel:hover .pd-panel-hover { opacity: 1; transform: translateY(0); }
+
+/* 格内关键指标：数值要和它所属的那一格待在一起 */
+#ponder-overlay .pd-panel-metrics {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+#ponder-overlay .pd-panel-metrics .pd-metric {
+  background: rgba(8, 12, 20, 0.88);
+  border: 1px solid #1e3450;
+  border-radius: 7px;
+  padding: 4px 8px;
+  text-align: right;
+}
+#ponder-overlay .pd-panel-metrics .pd-metric-k {
+  font-size: 9px; color: #6d86a6; font-family: 'Consolas', monospace;
+}
+#ponder-overlay .pd-panel-metrics .pd-metric-v {
+  font-size: 15px; font-weight: 700; font-family: 'Consolas', monospace;
+  line-height: 1.15; white-space: nowrap;
+}
+#ponder-overlay .pd-panel-metrics .pd-metric-s { font-size: 9.5px; color: #8a9bb5; }
+
+/* ---------- 底栏：主轴 + 字幕 + 控件 ---------- */
+#ponder-overlay .pd-bottom {
+  flex: 0 0 auto;
+  border-top: 1px solid #16283c;
+  padding: 9px 16px 12px;
+  background: linear-gradient(0deg, rgba(30, 44, 66, 0.4), rgba(10, 14, 23, 0.15));
+}
+
+/* 主轴：贯穿全流程的分镜序列 */
+#ponder-overlay .pd-axis { position: relative; margin-bottom: 9px; }
+#ponder-overlay .pd-axis-track {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+}
+#ponder-overlay .pd-axis-track::before {
+  content: '';
+  position: absolute;
+  left: 6px; right: 6px; top: 6px;
+  height: 2px;
+  background: #16283c;
+  z-index: 0;
+}
+#ponder-overlay .pd-axis-node {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+#ponder-overlay .pd-axis-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #16283c;
+  border: 2px solid #24405f;
+  transition: all 0.25s;
+}
+#ponder-overlay .pd-axis-label {
+  font-size: 10.5px;
+  color: #6d86a6;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  transition: color 0.25s;
+}
+#ponder-overlay .pd-axis-node.is-done .pd-axis-dot { background: rgba(81, 207, 102, 0.5); border-color: #51cf66; }
+#ponder-overlay .pd-axis-node.is-active .pd-axis-dot {
+  background: #4a90d9;
+  border-color: #8fc2ff;
+  box-shadow: 0 0 12px rgba(74, 144, 217, 0.85);
+  transform: scale(1.25);
+}
+#ponder-overlay .pd-axis-node.is-active .pd-axis-label { color: #eef2ff; font-weight: 600; }
+#ponder-overlay .pd-axis-node:hover .pd-axis-label { color: #cfe0f5; }
+
+/* 每个主轴节点下方一小条进度：进度与它所属的分镜绑定 */
+#ponder-overlay .pd-axis-bar {
+  width: 78%;
+  height: 2px;
+  border-radius: 1px;
+  background: #142031;
+  overflow: hidden;
+}
+#ponder-overlay .pd-axis-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #4a90d9, #51cf66);
+  transition: width 0.12s linear;
+}
+#ponder-overlay .pd-axis-node.is-done .pd-axis-fill { background: rgba(81, 207, 102, 0.6); }
+
+#ponder-overlay .pd-caption {
+  min-height: 34px;
+  margin-bottom: 8px;
+}
+#ponder-overlay .pd-caption-head {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #eef2ff;
+  margin-bottom: 2px;
+}
+#ponder-overlay .pd-narration {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #b6c6de;
+  transition: opacity 0.2s;
+}
+
+#ponder-overlay .pd-controls { display: flex; align-items: center; gap: 8px; }
+#ponder-overlay .pd-ctrl {
+  width: 32px; height: 28px;
+  border-radius: 7px;
+  background: rgba(30, 44, 66, 0.75);
+  border: 1px solid #24405f;
+  color: #b9c9e0;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+#ponder-overlay .pd-ctrl:hover { background: rgba(74, 144, 217, 0.25); border-color: #4a90d9; }
+#ponder-overlay .pd-ctrl-play {
+  width: 40px;
+  background: rgba(74, 144, 217, 0.3);
+  border-color: #4a90d9;
+  color: #eef2ff;
+}
+#ponder-overlay .pd-speed {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: #6d86a6;
+}
+#ponder-overlay .pd-chip {
+  padding: 3px 9px;
+  border-radius: 11px;
+  border: 1px solid #24405f;
+  background: transparent;
+  color: #8a9bb5;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+#ponder-overlay .pd-chip.is-on {
+  background: rgba(74, 144, 217, 0.25);
+  border-color: #4a90d9;
+  color: #eef2ff;
+}
+#ponder-overlay .pd-hint { font-size: 10px; color: #4d5f7a; white-space: nowrap; }
+
+/* ---------- 节点标签 / 流动标签 / 标注（每格各一份） ---------- */
+#ponder-overlay .pd-node-label {
+  position: absolute;
+  left: 0; top: 0;
+  display: flex; align-items: center; gap: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: #d6e3f5;
+  background: rgba(8, 12, 20, 0.84);
+  border: 1px solid #24405f;
+  border-radius: 10px;
+  transition: opacity 0.25s, border-color 0.25s, color 0.25s;
+}
+#ponder-overlay .pd-node-label.is-dim { opacity: 0.28; }
+#ponder-overlay .pd-node-label.is-focus {
+  border-color: #4a90d9; color: #eef2ff;
+  box-shadow: 0 0 12px rgba(74, 144, 217, 0.35);
+}
+#ponder-overlay .pd-node-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #4a90d9; box-shadow: 0 0 5px #4a90d9;
+}
+#ponder-overlay .pd-flow-label {
+  position: absolute; left: 0; top: 0;
+  padding: 1px 6px;
+  font-size: 9.5px;
+  font-family: 'Consolas', monospace;
+  background: rgba(8, 12, 20, 0.88);
+  border: 1px solid #4aa3ff;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+#ponder-overlay .pd-callout {
+  position: absolute; left: 0; top: 0;
+  padding: 2px 7px;
+  font-size: 10px;
+  white-space: nowrap;
+  background: rgba(8, 12, 20, 0.92);
+  border-left: 3px solid #4a90d9;
+  border-radius: 4px;
+  color: #cfe0f5;
+  animation: pd-pop 0.3s ease-out;
+}
+@keyframes pd-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); } }
+
+/* ---------- 对照面板 / 反事实提示 ---------- */
+#ponder-overlay .pd-compare {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: min(620px, 86%);
+  background: rgba(8, 12, 20, 0.95);
+  border: 1px solid #24405f;
+  border-radius: 11px;
+  padding: 11px 13px;
+  z-index: 20;
+  animation: pd-slide-up 0.32s ease-out;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+@keyframes pd-slide-up { from { opacity: 0; transform: translateX(-50%) translateY(14px); } }
+#ponder-overlay .pd-cmp-head {
+  font-size: 12px; font-weight: 700; color: #eef2ff; margin-bottom: 8px;
+}
+#ponder-overlay .pd-cmp-grid { display: flex; gap: 10px; }
+#ponder-overlay .pd-cmp-side {
+  flex: 1 1 0;
+  border: 1px solid #24405f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(22, 34, 52, 0.6);
+}
+#ponder-overlay .pd-cmp-title { font-size: 11.5px; font-weight: 700; margin-bottom: 5px; }
+#ponder-overlay .pd-cmp-line { font-size: 11px; color: #a9bad3; line-height: 1.7; }
+
+#ponder-overlay .pd-branch {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  max-width: min(420px, calc(100% - 120px));
+  padding: 6px 15px;
+  font-size: 12px;
+  border-radius: 18px;
+  background: rgba(8, 12, 20, 0.94);
+  border: 1px solid #24405f;
+  z-index: 21;
+  animation: pd-drop 0.3s ease-out;
+  text-align: right;
+  line-height: 1.5;
+}
+@keyframes pd-drop { from { opacity: 0; transform: translateY(-12px); } }
+#ponder-overlay .pd-tone-info { border-color: #4a90d9; color: #cfe0f5; }
+#ponder-overlay .pd-tone-warn { border-color: #ffaa00; color: #ffd98a; }
+#ponder-overlay .pd-tone-ok   { border-color: #51cf66; color: #a8f0b8; }
+
+/* ---------- 入口：对象气泡 ---------- */
+#ponder-bubble {
+  position: absolute;
+  left: 0; top: 0;
+  z-index: 8800;
+  min-width: 168px;
+  max-width: 232px;
+  padding: 8px 10px;
+  border: 1px solid #2c4a6a;
+  border-radius: 10px;
+  background: rgba(8, 12, 20, 0.94);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(74, 144, 217, 0.12);
+  font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+  animation: pd-bubble-in 0.16s ease-out;
+  will-change: transform;
+}
+@keyframes pd-bubble-in { from { opacity: 0; } to { opacity: 1; } }
+#ponder-bubble .pb-head {
+  font-size: 11px; font-weight: 700; color: #c9a227; letter-spacing: 0.04em;
+  margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid #1c3049;
+}
+#ponder-bubble .pb-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 6px; border-radius: 6px; cursor: pointer; transition: background 0.13s;
+}
+#ponder-bubble .pb-item:hover { background: rgba(74, 144, 217, 0.2); }
+#ponder-bubble .pb-icon { font-size: 12px; flex: 0 0 auto; }
+#ponder-bubble .pb-title { flex: 1 1 auto; font-size: 11.5px; color: #d6e3f5; line-height: 1.35; }
+#ponder-bubble .pb-item.is-done .pb-title { color: #8a9bb5; }
+#ponder-bubble .pb-item.is-done .pb-title::after { content: ' ✓'; color: #51cf66; font-size: 10px; }
+#ponder-bubble .pb-ch { flex: 0 0 auto; font-size: 10px; color: #6d86a6; font-family: 'Consolas', monospace; }
+#ponder-bubble .pb-empty { font-size: 11px; color: #8a9bb5; padding: 4px 2px 6px; line-height: 1.5; }
+#ponder-bubble .pb-foot {
+  margin-top: 6px; padding-top: 5px; border-top: 1px solid #16283c;
+  font-size: 9.5px; color: #4d5f7a; line-height: 1.4;
+}
+
+/* ---------- 入口：课程目录弹层 ---------- */
+#ponder-menu {
+  position: fixed;
+  z-index: 8900;
+  min-width: 252px;
+  max-width: 300px;
+  padding: 10px 12px 8px;
+  border: 1px solid #4a4020;
+  border-radius: 12px;
+  background: rgba(8, 12, 20, 0.96);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(201, 162, 39, 0.12);
+  font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+  animation: pd-menu-in 0.16s ease-out;
+}
+@keyframes pd-menu-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+#ponder-menu .pm-head {
+  font-size: 12px; font-weight: 700; color: #c9a227; letter-spacing: 0.03em;
+  padding-bottom: 7px; margin-bottom: 6px; border-bottom: 1px solid #2a2418;
+}
+#ponder-menu .pm-sec { font-size: 10px; color: #6d86a6; letter-spacing: 0.1em; margin: 8px 0 4px; }
+#ponder-menu .pm-sec:first-of-type { margin-top: 2px; }
+#ponder-menu .pm-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 7px; border-radius: 7px; cursor: pointer; transition: background 0.13s;
+}
+#ponder-menu .pm-item:hover { background: rgba(201, 162, 39, 0.18); }
+#ponder-menu .pm-icon { font-size: 13px; flex: 0 0 auto; }
+#ponder-menu .pm-title { flex: 1 1 auto; font-size: 12px; color: #d6e3f5; line-height: 1.35; }
+#ponder-menu .pm-item.is-done .pm-title { color: #93a4bd; }
+#ponder-menu .pm-ch {
+  flex: 0 0 auto; font-size: 10px; color: #6d86a6;
+  font-family: 'Consolas', monospace; white-space: nowrap;
+}
+#ponder-menu .pm-foot {
+  margin-top: 8px; padding-top: 6px; border-top: 1px solid #1a2434;
+  font-size: 9.5px; color: #4d5f7a;
+}
+
+/* ---------- 窄屏适配 ---------- */
+/* 分镜带是横向滚动的，宽度由 JS 按容器算（--pd-cell-w），
+   所以这里只处理"帧边距"和文字密度，不再改列数。 */
+@media (max-width: 820px) {
+  #ponder-overlay .pd-frame { inset: 8px; }
+  #ponder-overlay .pd-axis-label { font-size: 9.5px; }
+  #ponder-overlay .pd-title-sub { display: none; }
+  #ponder-overlay .pd-hint { display: none; }
+}

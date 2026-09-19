@@ -1,0 +1,29 @@
+{
+  "point": {
+    "target": "building",
+    "conditions": [
+      {
+        "field": "type",
+        "op": "==",
+        "value": "tree",
+        "target": "tree",
+        "uid": 101
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "lamp",
+        "target": "lamp",
+        "uid": 102
+      }
+    ]
+  },
+  "line": {
+    "target": "road_straight",
+    "conditions": []
+  },
+  "polygon": {
+    "target": "building",
+    "conditions": []
+  }
+}

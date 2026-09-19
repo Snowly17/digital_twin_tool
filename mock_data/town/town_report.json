@@ -1,0 +1,107 @@
+{
+  "generated_at": "2026-09-19T04:51:02+00:00",
+  "objects": 137,
+  "stations": 25,
+  "type_counts": {
+    "water": 1,
+    "sidewalk": 5,
+    "road": 8,
+    "lamp": 4,
+    "car": 5,
+    "tree": 24,
+    "building_tall": 31,
+    "building": 10,
+    "container_b": 9,
+    "solar_panel_land": 15,
+    "charger_fast": 14,
+    "charger_slow": 11
+  },
+  "scene_bounds": {
+    "x": [
+      -29.645,
+      34.155
+    ],
+    "z": [
+      -25.787,
+      25.913
+    ]
+  },
+  "checks": [
+    {
+      "name": "全部对象落在地面 ±40 内",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "全部类型前端都能渲染",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "充电桩临街（或位于充电广场内）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "建筑之间不重叠",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "充电桩位置互不重合",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "每个充电桩都绑定了 station_id",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "站点 ID 唯一",
+      "ok": true,
+      "detail": "25 个站点"
+    },
+    {
+      "name": "商业区利用率 > 公园区",
+      "ok": true,
+      "detail": "商业 0.58 vs 公园 0.29"
+    },
+    {
+      "name": "对象总数在 100~170 之间（含路网/水面等大件）",
+      "ok": true,
+      "detail": "137 个"
+    },
+    {
+      "name": "充电桩占比 >= 15%（以实时数据为主）",
+      "ok": true,
+      "detail": "25 / 137 = 18%"
+    },
+    {
+      "name": "站点数与场景对象数一致",
+      "ok": true,
+      "detail": "25 站 / 25 桩"
+    },
+    {
+      "name": "场景↔经纬度往返无误差",
+      "ok": true,
+      "detail": "最大误差 0.0000 单位"
+    },
+    {
+      "name": "人行道独立成条",
+      "ok": true,
+      "detail": "4 条，例 人行道-01-011 长 59.4×宽 1.4"
+    },
+    {
+      "name": "红绿灯都在路口附近",
+      "ok": true,
+      "detail": "4 盏，分布在 2 个路口"
+    },
+    {
+      "name": "车辆都停在车道上",
+      "ok": true,
+      "detail": "5 辆，例 车辆-main-east-01-019"
+    }
+  ],
+  "all_passed": true
+}

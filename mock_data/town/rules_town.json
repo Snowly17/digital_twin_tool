@@ -1,0 +1,93 @@
+{
+  "point": {
+    "target": "building",
+    "conditions": [
+      {
+        "field": "type",
+        "op": "==",
+        "value": "charger_slow",
+        "target": "charger_slow",
+        "uid": 201
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "charger_fast",
+        "target": "charger_fast",
+        "uid": 202
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "charger_super",
+        "target": "charger_super",
+        "uid": 203
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "tree",
+        "target": "tree",
+        "uid": 204
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "lamp",
+        "target": "lamp",
+        "uid": 205
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "container_b",
+        "target": "container_b",
+        "uid": 206
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "solar_panel_land",
+        "target": "solar_panel_land",
+        "uid": 207
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "windmill_low",
+        "target": "windmill_low",
+        "uid": 208
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "building_tall",
+        "target": "building_tall",
+        "uid": 209
+      },
+      {
+        "field": "zone",
+        "op": "==",
+        "value": "commercial",
+        "target": "building_tall",
+        "uid": 210
+      }
+    ]
+  },
+  "line": {
+    "target": "road_straight",
+    "conditions": []
+  },
+  "polygon": {
+    "target": "building",
+    "conditions": [
+      {
+        "field": "use",
+        "op": "==",
+        "value": "commercial",
+        "target": "building_tall",
+        "uid": 211
+      }
+    ]
+  }
+}

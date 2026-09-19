@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "充电站1", "utilization": 0.75},
+      "geometry": {"type": "Point", "coordinates": [114.0579, 22.5431]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "主干道"},
+      "geometry": {"type": "LineString", "coordinates": [[114.055, 22.542], [114.06, 22.545]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "商业楼", "use": "commercial", "height": 12},
+      "geometry": {"type": "Polygon", "coordinates": [[[114.061, 22.546], [114.063, 22.546], [114.063, 22.548], [114.061, 22.548], [114.061, 22.546]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "居民楼", "use": "residential", "height": 8},
+      "geometry": {"type": "Polygon", "coordinates": [[[114.058, 22.547], [114.059, 22.547], [114.059, 22.548], [114.058, 22.548], [114.058, 22.547]]]}
+    }
+  ]
+}

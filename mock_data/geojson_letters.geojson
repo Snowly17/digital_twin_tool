@@ -1,0 +1,1646 @@
+{
+  "type": "FeatureCollection",
+  "name": "csv_letters_buildings",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C01",
+        "use": "residential",
+        "height": 8,
+        "floor": 1,
+        "station_id": "BLD-C001",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.036245,
+              22.543045
+            ],
+            [
+              114.037155,
+              22.543045
+            ],
+            [
+              114.037155,
+              22.543955
+            ],
+            [
+              114.036245,
+              22.543955
+            ],
+            [
+              114.036245,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C02",
+        "use": "commercial",
+        "height": 8,
+        "floor": 1,
+        "station_id": "BLD-C002",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.037645,
+              22.543045
+            ],
+            [
+              114.038555,
+              22.543045
+            ],
+            [
+              114.038555,
+              22.543955
+            ],
+            [
+              114.037645,
+              22.543955
+            ],
+            [
+              114.037645,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C03",
+        "use": "residential",
+        "height": 8,
+        "floor": 1,
+        "station_id": "BLD-C003",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.039045,
+              22.543045
+            ],
+            [
+              114.039955,
+              22.543045
+            ],
+            [
+              114.039955,
+              22.543955
+            ],
+            [
+              114.039045,
+              22.543955
+            ],
+            [
+              114.039045,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C04",
+        "use": "commercial",
+        "height": 8,
+        "floor": 1,
+        "station_id": "BLD-C004",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.040445,
+              22.543045
+            ],
+            [
+              114.041355,
+              22.543045
+            ],
+            [
+              114.041355,
+              22.543955
+            ],
+            [
+              114.040445,
+              22.543955
+            ],
+            [
+              114.040445,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S09",
+        "use": "residential",
+        "height": 12,
+        "floor": 1,
+        "station_id": "BLD-S005",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.047445,
+              22.543045
+            ],
+            [
+              114.048355,
+              22.543045
+            ],
+            [
+              114.048355,
+              22.543955
+            ],
+            [
+              114.047445,
+              22.543955
+            ],
+            [
+              114.047445,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S010",
+        "use": "commercial",
+        "height": 12,
+        "floor": 1,
+        "station_id": "BLD-S006",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.048845,
+              22.543045
+            ],
+            [
+              114.049755,
+              22.543045
+            ],
+            [
+              114.049755,
+              22.543955
+            ],
+            [
+              114.048845,
+              22.543955
+            ],
+            [
+              114.048845,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V011",
+        "use": "residential",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V007",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.050245,
+              22.543045
+            ],
+            [
+              114.051155,
+              22.543045
+            ],
+            [
+              114.051155,
+              22.543955
+            ],
+            [
+              114.050245,
+              22.543955
+            ],
+            [
+              114.050245,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V012",
+        "use": "commercial",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V008",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.051645,
+              22.543045
+            ],
+            [
+              114.052555,
+              22.543045
+            ],
+            [
+              114.052555,
+              22.543955
+            ],
+            [
+              114.051645,
+              22.543955
+            ],
+            [
+              114.051645,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V016",
+        "use": "commercial",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V009",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.057245,
+              22.543045
+            ],
+            [
+              114.058155,
+              22.543045
+            ],
+            [
+              114.058155,
+              22.543955
+            ],
+            [
+              114.057245,
+              22.543955
+            ],
+            [
+              114.057245,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V021",
+        "use": "residential",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V010",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.064245,
+              22.543045
+            ],
+            [
+              114.065155,
+              22.543045
+            ],
+            [
+              114.065155,
+              22.543955
+            ],
+            [
+              114.064245,
+              22.543955
+            ],
+            [
+              114.064245,
+              22.543045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C10",
+        "use": "residential",
+        "height": 8,
+        "floor": 2,
+        "station_id": "BLD-C011",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.034845,
+              22.541645
+            ],
+            [
+              114.035755,
+              22.541645
+            ],
+            [
+              114.035755,
+              22.542555
+            ],
+            [
+              114.034845,
+              22.542555
+            ],
+            [
+              114.034845,
+              22.541645
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S15",
+        "use": "commercial",
+        "height": 12,
+        "floor": 2,
+        "station_id": "BLD-S012",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.041845,
+              22.541645
+            ],
+            [
+              114.042755,
+              22.541645
+            ],
+            [
+              114.042755,
+              22.542555
+            ],
+            [
+              114.041845,
+              22.542555
+            ],
+            [
+              114.041845,
+              22.541645
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S18",
+        "use": "residential",
+        "height": 12,
+        "floor": 2,
+        "station_id": "BLD-S013",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.046045,
+              22.541645
+            ],
+            [
+              114.046955,
+              22.541645
+            ],
+            [
+              114.046955,
+              22.542555
+            ],
+            [
+              114.046045,
+              22.542555
+            ],
+            [
+              114.046045,
+              22.541645
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V113",
+        "use": "commercial",
+        "height": 10,
+        "floor": 2,
+        "station_id": "BLD-V014",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.053045,
+              22.541645
+            ],
+            [
+              114.053955,
+              22.541645
+            ],
+            [
+              114.053955,
+              22.542555
+            ],
+            [
+              114.053045,
+              22.542555
+            ],
+            [
+              114.053045,
+              22.541645
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V116",
+        "use": "residential",
+        "height": 10,
+        "floor": 2,
+        "station_id": "BLD-V015",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.057245,
+              22.541645
+            ],
+            [
+              114.058155,
+              22.541645
+            ],
+            [
+              114.058155,
+              22.542555
+            ],
+            [
+              114.057245,
+              22.542555
+            ],
+            [
+              114.057245,
+              22.541645
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V121",
+        "use": "commercial",
+        "height": 10,
+        "floor": 2,
+        "station_id": "BLD-V016",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.064245,
+              22.541645
+            ],
+            [
+              114.065155,
+              22.541645
+            ],
+            [
+              114.065155,
+              22.542555
+            ],
+            [
+              114.064245,
+              22.542555
+            ],
+            [
+              114.064245,
+              22.541645
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C20",
+        "use": "commercial",
+        "height": 8,
+        "floor": 3,
+        "station_id": "BLD-C017",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.034845,
+              22.540245
+            ],
+            [
+              114.035755,
+              22.540245
+            ],
+            [
+              114.035755,
+              22.541155
+            ],
+            [
+              114.034845,
+              22.541155
+            ],
+            [
+              114.034845,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S29",
+        "use": "residential",
+        "height": 12,
+        "floor": 3,
+        "station_id": "BLD-S018",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.047445,
+              22.540245
+            ],
+            [
+              114.048355,
+              22.540245
+            ],
+            [
+              114.048355,
+              22.541155
+            ],
+            [
+              114.047445,
+              22.541155
+            ],
+            [
+              114.047445,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S210",
+        "use": "commercial",
+        "height": 12,
+        "floor": 3,
+        "station_id": "BLD-S019",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.048845,
+              22.540245
+            ],
+            [
+              114.049755,
+              22.540245
+            ],
+            [
+              114.049755,
+              22.541155
+            ],
+            [
+              114.048845,
+              22.541155
+            ],
+            [
+              114.048845,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V211",
+        "use": "residential",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V020",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.050245,
+              22.540245
+            ],
+            [
+              114.051155,
+              22.540245
+            ],
+            [
+              114.051155,
+              22.541155
+            ],
+            [
+              114.050245,
+              22.541155
+            ],
+            [
+              114.050245,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V212",
+        "use": "commercial",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V021",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.051645,
+              22.540245
+            ],
+            [
+              114.052555,
+              22.540245
+            ],
+            [
+              114.052555,
+              22.541155
+            ],
+            [
+              114.051645,
+              22.541155
+            ],
+            [
+              114.051645,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V216",
+        "use": "commercial",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V022",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.057245,
+              22.540245
+            ],
+            [
+              114.058155,
+              22.540245
+            ],
+            [
+              114.058155,
+              22.541155
+            ],
+            [
+              114.057245,
+              22.541155
+            ],
+            [
+              114.057245,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V221",
+        "use": "residential",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V023",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.064245,
+              22.540245
+            ],
+            [
+              114.065155,
+              22.540245
+            ],
+            [
+              114.065155,
+              22.541155
+            ],
+            [
+              114.064245,
+              22.541155
+            ],
+            [
+              114.064245,
+              22.540245
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C30",
+        "use": "residential",
+        "height": 8,
+        "floor": 1,
+        "station_id": "BLD-C024",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.034845,
+              22.538845
+            ],
+            [
+              114.035755,
+              22.538845
+            ],
+            [
+              114.035755,
+              22.539755
+            ],
+            [
+              114.034845,
+              22.539755
+            ],
+            [
+              114.034845,
+              22.538845
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V313",
+        "use": "commercial",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V025",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.053045,
+              22.538845
+            ],
+            [
+              114.053955,
+              22.538845
+            ],
+            [
+              114.053955,
+              22.539755
+            ],
+            [
+              114.053045,
+              22.539755
+            ],
+            [
+              114.053045,
+              22.538845
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V316",
+        "use": "residential",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V026",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.057245,
+              22.538845
+            ],
+            [
+              114.058155,
+              22.538845
+            ],
+            [
+              114.058155,
+              22.539755
+            ],
+            [
+              114.057245,
+              22.539755
+            ],
+            [
+              114.057245,
+              22.538845
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V321",
+        "use": "commercial",
+        "height": 10,
+        "floor": 1,
+        "station_id": "BLD-V027",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.064245,
+              22.538845
+            ],
+            [
+              114.065155,
+              22.538845
+            ],
+            [
+              114.065155,
+              22.539755
+            ],
+            [
+              114.064245,
+              22.539755
+            ],
+            [
+              114.064245,
+              22.538845
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C40",
+        "use": "commercial",
+        "height": 8,
+        "floor": 2,
+        "station_id": "BLD-C028",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.034845,
+              22.537445
+            ],
+            [
+              114.035755,
+              22.537445
+            ],
+            [
+              114.035755,
+              22.538355
+            ],
+            [
+              114.034845,
+              22.538355
+            ],
+            [
+              114.034845,
+              22.537445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S45",
+        "use": "residential",
+        "height": 12,
+        "floor": 2,
+        "station_id": "BLD-S029",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.041845,
+              22.537445
+            ],
+            [
+              114.042755,
+              22.537445
+            ],
+            [
+              114.042755,
+              22.538355
+            ],
+            [
+              114.041845,
+              22.538355
+            ],
+            [
+              114.041845,
+              22.537445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S48",
+        "use": "commercial",
+        "height": 12,
+        "floor": 2,
+        "station_id": "BLD-S030",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.046045,
+              22.537445
+            ],
+            [
+              114.046955,
+              22.537445
+            ],
+            [
+              114.046955,
+              22.538355
+            ],
+            [
+              114.046045,
+              22.538355
+            ],
+            [
+              114.046045,
+              22.537445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V413",
+        "use": "residential",
+        "height": 10,
+        "floor": 2,
+        "station_id": "BLD-V031",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.053045,
+              22.537445
+            ],
+            [
+              114.053955,
+              22.537445
+            ],
+            [
+              114.053955,
+              22.538355
+            ],
+            [
+              114.053045,
+              22.538355
+            ],
+            [
+              114.053045,
+              22.537445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V417",
+        "use": "residential",
+        "height": 10,
+        "floor": 2,
+        "station_id": "BLD-V032",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.058645,
+              22.537445
+            ],
+            [
+              114.059555,
+              22.537445
+            ],
+            [
+              114.059555,
+              22.538355
+            ],
+            [
+              114.058645,
+              22.538355
+            ],
+            [
+              114.058645,
+              22.537445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V420",
+        "use": "commercial",
+        "height": 10,
+        "floor": 2,
+        "station_id": "BLD-V033",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.062845,
+              22.537445
+            ],
+            [
+              114.063755,
+              22.537445
+            ],
+            [
+              114.063755,
+              22.538355
+            ],
+            [
+              114.062845,
+              22.538355
+            ],
+            [
+              114.062845,
+              22.537445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C51",
+        "use": "commercial",
+        "height": 8,
+        "floor": 3,
+        "station_id": "BLD-C034",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.036245,
+              22.536045
+            ],
+            [
+              114.037155,
+              22.536045
+            ],
+            [
+              114.037155,
+              22.536955
+            ],
+            [
+              114.036245,
+              22.536955
+            ],
+            [
+              114.036245,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C52",
+        "use": "residential",
+        "height": 8,
+        "floor": 3,
+        "station_id": "BLD-C035",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.037645,
+              22.536045
+            ],
+            [
+              114.038555,
+              22.536045
+            ],
+            [
+              114.038555,
+              22.536955
+            ],
+            [
+              114.037645,
+              22.536955
+            ],
+            [
+              114.037645,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C53",
+        "use": "commercial",
+        "height": 8,
+        "floor": 3,
+        "station_id": "BLD-C036",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.039045,
+              22.536045
+            ],
+            [
+              114.039955,
+              22.536045
+            ],
+            [
+              114.039955,
+              22.536955
+            ],
+            [
+              114.039045,
+              22.536955
+            ],
+            [
+              114.039045,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-C54",
+        "use": "residential",
+        "height": 8,
+        "floor": 3,
+        "station_id": "BLD-C037",
+        "letter": "C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.040445,
+              22.536045
+            ],
+            [
+              114.041355,
+              22.536045
+            ],
+            [
+              114.041355,
+              22.536955
+            ],
+            [
+              114.040445,
+              22.536955
+            ],
+            [
+              114.040445,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S59",
+        "use": "commercial",
+        "height": 12,
+        "floor": 3,
+        "station_id": "BLD-S038",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.047445,
+              22.536045
+            ],
+            [
+              114.048355,
+              22.536045
+            ],
+            [
+              114.048355,
+              22.536955
+            ],
+            [
+              114.047445,
+              22.536955
+            ],
+            [
+              114.047445,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-S510",
+        "use": "residential",
+        "height": 12,
+        "floor": 3,
+        "station_id": "BLD-S039",
+        "letter": "S"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.048845,
+              22.536045
+            ],
+            [
+              114.049755,
+              22.536045
+            ],
+            [
+              114.049755,
+              22.536955
+            ],
+            [
+              114.048845,
+              22.536955
+            ],
+            [
+              114.048845,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V511",
+        "use": "commercial",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V040",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.050245,
+              22.536045
+            ],
+            [
+              114.051155,
+              22.536045
+            ],
+            [
+              114.051155,
+              22.536955
+            ],
+            [
+              114.050245,
+              22.536955
+            ],
+            [
+              114.050245,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V512",
+        "use": "residential",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V041",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.051645,
+              22.536045
+            ],
+            [
+              114.052555,
+              22.536045
+            ],
+            [
+              114.052555,
+              22.536955
+            ],
+            [
+              114.051645,
+              22.536955
+            ],
+            [
+              114.051645,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V518",
+        "use": "residential",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V042",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.060045,
+              22.536045
+            ],
+            [
+              114.060955,
+              22.536045
+            ],
+            [
+              114.060955,
+              22.536955
+            ],
+            [
+              114.060045,
+              22.536955
+            ],
+            [
+              114.060045,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "建筑-V519",
+        "use": "commercial",
+        "height": 10,
+        "floor": 3,
+        "station_id": "BLD-V043",
+        "letter": "V"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              114.061445,
+              22.536045
+            ],
+            [
+              114.062355,
+              22.536045
+            ],
+            [
+              114.062355,
+              22.536955
+            ],
+            [
+              114.061445,
+              22.536955
+            ],
+            [
+              114.061445,
+              22.536045
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

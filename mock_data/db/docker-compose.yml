@@ -1,0 +1,63 @@
+# mock_data/db/docker-compose.yml
+#
+# 一条命令起好 MySQL + PostgreSQL，并自动灌入 "C S V" 测试数据。
+#
+#   cd mock_data/db
+#   docker compose up -d
+#
+# 起来之后在界面里填：
+#   MySQL      : localhost 3306 root 123456  charging  stations
+#   PostgreSQL : localhost 5432 postgres postgres charging stations
+#
+# 停止并清空：
+#   docker compose down -v
+#
+# 生成时间：2026-09-19T04:20:50+00:00
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: dtt-mock-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: "charging"
+      TZ: "Asia/Shanghai"
+    ports:
+      - "3306:3306"
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./mysql_seed.sql:/docker-entrypoint-initdb.d/10_mysql_seed.sql:ro
+      - dtt_mysql_data:/var/lib/mysql
+
+  postgres:
+    image: postgres:16
+    container_name: dtt-mock-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "charging"
+      TZ: "Asia/Shanghai"
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d charging"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./postgres_seed.sql:/docker-entrypoint-initdb.d/10_postgres_seed.sql:ro
+      - dtt_pg_data:/var/lib/postgresql/data
+
+volumes:
+  dtt_mysql_data:
+  dtt_pg_data:

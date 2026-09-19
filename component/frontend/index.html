@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js Scene</title>
+    <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.0.0/dist/streamlit-component-lib.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        // 从 Streamlit 获取参数
+        const htmlContent = Streamlit.args.html_content;
+        document.getElementById('root').innerHTML = htmlContent;
+
+        // 监听子 iframe（由 htmlContent 嵌入的 Three.js 场景）发送的消息
+        window.addEventListener('message', function(event) {
+            // 只处理 Streamlit 的 setComponentValue 消息
+            if (event.data && event.data.type === 'streamlit:setComponentValue') {
+                // 转发给 Streamlit
+                Streamlit.setComponentValue(event.data.value);
+            }
+        });
+    </script>
+</body>
+</html>

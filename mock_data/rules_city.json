@@ -1,0 +1,59 @@
+{
+  "point": {
+    "target": "charger_fast",
+    "conditions": [
+      {
+        "field": "type",
+        "op": "==",
+        "value": "tree",
+        "target": "tree",
+        "uid": 4
+      },
+      {
+        "field": "type",
+        "op": "==",
+        "value": "lamp",
+        "target": "lamp",
+        "uid": 5
+      },
+      {
+        "field": "utilization",
+        "op": ">",
+        "value": "0.8",
+        "target": "charger_super",
+        "uid": 6
+      }
+    ]
+  },
+  "line": {
+    "target": "road_straight",
+    "conditions": [
+      {
+        "field": "highway",
+        "op": "contains",
+        "value": "primary",
+        "target": "road_straight",
+        "uid": 7
+      }
+    ]
+  },
+  "polygon": {
+    "target": "building",
+    "conditions": [
+      {
+        "field": "use",
+        "op": "==",
+        "value": "commercial",
+        "target": "building_tall",
+        "uid": 8
+      },
+      {
+        "field": "height",
+        "op": ">",
+        "value": "10",
+        "target": "building_tall",
+        "uid": 9
+      }
+    ]
+  }
+}

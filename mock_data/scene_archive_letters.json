@@ -1,0 +1,1218 @@
+{
+  "version": "1.0",
+  "scene_name": "测试场景-CSV字母建筑",
+  "created_at": "2026-09-19T04:20:50+00:00",
+  "updated_at": "2026-09-19T04:20:50+00:00",
+  "author": "mock_data",
+  "metadata": {
+    "description": "用 34 栋建筑摆成 \"C S V\" 三个字母，用于测试「数据导入与导出 → 载入场景存档（.json）」",
+    "letters": "CSV",
+    "building_count": 43
+  },
+  "objects": [
+    {
+      "id": "mock-csv-C-00-01",
+      "type": "building",
+      "name": "建筑-C01",
+      "position": {
+        "x": -39.053,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-00-02",
+      "type": "building",
+      "name": "建筑-C02",
+      "position": {
+        "x": -34.747,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-00-03",
+      "type": "building",
+      "name": "建筑-C03",
+      "position": {
+        "x": -30.442,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-00-04",
+      "type": "building",
+      "name": "建筑-C04",
+      "position": {
+        "x": -26.136,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-00-09",
+      "type": "building",
+      "name": "建筑-S09",
+      "position": {
+        "x": -4.606,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-00-10",
+      "type": "building",
+      "name": "建筑-S010",
+      "position": {
+        "x": -0.3,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-00-11",
+      "type": "building",
+      "name": "建筑-V011",
+      "position": {
+        "x": 4.005,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-00-12",
+      "type": "building",
+      "name": "建筑-V012",
+      "position": {
+        "x": 8.311,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-00-16",
+      "type": "building",
+      "name": "建筑-V016",
+      "position": {
+        "x": 25.535,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-00-21",
+      "type": "building",
+      "name": "建筑-V021",
+      "position": {
+        "x": 47.064,
+        "y": 0.0,
+        "z": 11.492
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-01-00",
+      "type": "building",
+      "name": "建筑-C10",
+      "position": {
+        "x": -43.359,
+        "y": 0.0,
+        "z": 6.83
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 2,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-01-05",
+      "type": "building",
+      "name": "建筑-S15",
+      "position": {
+        "x": -21.83,
+        "y": 0.0,
+        "z": 6.83
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 2,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-01-08",
+      "type": "building",
+      "name": "建筑-S18",
+      "position": {
+        "x": -8.912,
+        "y": 0.0,
+        "z": 6.83
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 2,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-01-13",
+      "type": "building",
+      "name": "建筑-V113",
+      "position": {
+        "x": 12.617,
+        "y": 0.0,
+        "z": 6.83
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 2,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-01-16",
+      "type": "building",
+      "name": "建筑-V116",
+      "position": {
+        "x": 25.535,
+        "y": 0.0,
+        "z": 6.83
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 2,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-01-21",
+      "type": "building",
+      "name": "建筑-V121",
+      "position": {
+        "x": 47.064,
+        "y": 0.0,
+        "z": 6.83
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 2,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-02-00",
+      "type": "building",
+      "name": "建筑-C20",
+      "position": {
+        "x": -43.359,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-02-09",
+      "type": "building",
+      "name": "建筑-S29",
+      "position": {
+        "x": -4.606,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-02-10",
+      "type": "building",
+      "name": "建筑-S210",
+      "position": {
+        "x": -0.3,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-02-11",
+      "type": "building",
+      "name": "建筑-V211",
+      "position": {
+        "x": 4.005,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-02-12",
+      "type": "building",
+      "name": "建筑-V212",
+      "position": {
+        "x": 8.311,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-02-16",
+      "type": "building",
+      "name": "建筑-V216",
+      "position": {
+        "x": 25.535,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-02-21",
+      "type": "building",
+      "name": "建筑-V221",
+      "position": {
+        "x": 47.064,
+        "y": 0.0,
+        "z": 2.168
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-03-00",
+      "type": "building",
+      "name": "建筑-C30",
+      "position": {
+        "x": -43.359,
+        "y": 0.0,
+        "z": -2.494
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-03-13",
+      "type": "building",
+      "name": "建筑-V313",
+      "position": {
+        "x": 12.617,
+        "y": 0.0,
+        "z": -2.494
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-03-16",
+      "type": "building",
+      "name": "建筑-V316",
+      "position": {
+        "x": 25.535,
+        "y": 0.0,
+        "z": -2.494
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-03-21",
+      "type": "building",
+      "name": "建筑-V321",
+      "position": {
+        "x": 47.064,
+        "y": 0.0,
+        "z": -2.494
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 1,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-04-00",
+      "type": "building",
+      "name": "建筑-C40",
+      "position": {
+        "x": -43.359,
+        "y": 0.0,
+        "z": -7.156
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 2,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-04-05",
+      "type": "building",
+      "name": "建筑-S45",
+      "position": {
+        "x": -21.83,
+        "y": 0.0,
+        "z": -7.156
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 2,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-04-08",
+      "type": "building",
+      "name": "建筑-S48",
+      "position": {
+        "x": -8.912,
+        "y": 0.0,
+        "z": -7.156
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 2,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-04-13",
+      "type": "building",
+      "name": "建筑-V413",
+      "position": {
+        "x": 12.617,
+        "y": 0.0,
+        "z": -7.156
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 2,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-04-17",
+      "type": "building",
+      "name": "建筑-V417",
+      "position": {
+        "x": 29.841,
+        "y": 0.0,
+        "z": -7.156
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 2,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-04-20",
+      "type": "building",
+      "name": "建筑-V420",
+      "position": {
+        "x": 42.758,
+        "y": 0.0,
+        "z": -7.156
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 2,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-05-01",
+      "type": "building",
+      "name": "建筑-C51",
+      "position": {
+        "x": -39.053,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-05-02",
+      "type": "building",
+      "name": "建筑-C52",
+      "position": {
+        "x": -34.747,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-05-03",
+      "type": "building",
+      "name": "建筑-C53",
+      "position": {
+        "x": -30.442,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-C-05-04",
+      "type": "building",
+      "name": "建筑-C54",
+      "position": {
+        "x": -26.136,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 8,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-05-09",
+      "type": "building",
+      "name": "建筑-S59",
+      "position": {
+        "x": -4.606,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-S-05-10",
+      "type": "building",
+      "name": "建筑-S510",
+      "position": {
+        "x": -0.3,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 12,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-05-11",
+      "type": "building",
+      "name": "建筑-V511",
+      "position": {
+        "x": 4.005,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-05-12",
+      "type": "building",
+      "name": "建筑-V512",
+      "position": {
+        "x": 8.311,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-05-18",
+      "type": "building",
+      "name": "建筑-V518",
+      "position": {
+        "x": 34.147,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "residential",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "mock-csv-V-05-19",
+      "type": "building",
+      "name": "建筑-V519",
+      "position": {
+        "x": 38.453,
+        "y": 0.0,
+        "z": -11.818
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "height": 10,
+        "floor": 3,
+        "use": "commercial",
+        "mock_source": "scene_archive_letters"
+      },
+      "utilization": 0.5
+    }
+  ]
+}

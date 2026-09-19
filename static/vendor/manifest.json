@@ -1,0 +1,82 @@
+{
+  "generatedBy": "tools/vendor_frontend_deps.mjs",
+  "three": "0.160.0",
+  "supabaseJs": "2.116.0",
+  "files": [
+    {
+      "local": "static/vendor/three/three.module.js",
+      "bytes": 1272972,
+      "remote": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    },
+    {
+      "local": "static/vendor/three/addons/controls/OrbitControls.js",
+      "bytes": 29868,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+    },
+    {
+      "local": "static/vendor/three/addons/controls/TransformControls.js",
+      "bytes": 40573,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js"
+    },
+    {
+      "local": "static/vendor/three/addons/renderers/CSS2DRenderer.js",
+      "bytes": 4407,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js"
+    },
+    {
+      "local": "static/vendor/three/addons/loaders/GLTFLoader.js",
+      "bytes": 108522,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+    },
+    {
+      "local": "static/vendor/three/addons/utils/BufferGeometryUtils.js",
+      "bytes": 31906,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js"
+    },
+    {
+      "local": "static/vendor/three/addons/postprocessing/EffectComposer.js",
+      "bytes": 4651,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js"
+    },
+    {
+      "local": "static/vendor/three/addons/shaders/CopyShader.js",
+      "bytes": 571,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/shaders/CopyShader.js"
+    },
+    {
+      "local": "static/vendor/three/addons/postprocessing/ShaderPass.js",
+      "bytes": 1576,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/ShaderPass.js"
+    },
+    {
+      "local": "static/vendor/three/addons/postprocessing/Pass.js",
+      "bytes": 1706,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/Pass.js"
+    },
+    {
+      "local": "static/vendor/three/addons/postprocessing/MaskPass.js",
+      "bytes": 2231,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/MaskPass.js"
+    },
+    {
+      "local": "static/vendor/three/addons/postprocessing/RenderPass.js",
+      "bytes": 1915,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js"
+    },
+    {
+      "local": "static/vendor/three/addons/postprocessing/UnrealBloomPass.js",
+      "bytes": 12406,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js"
+    },
+    {
+      "local": "static/vendor/three/addons/shaders/LuminosityHighPassShader.js",
+      "bytes": 1192,
+      "remote": "https://unpkg.com/three@0.160.0/examples/jsm/shaders/LuminosityHighPassShader.js"
+    },
+    {
+      "local": "static/vendor/supabase/supabase-js.umd.js",
+      "bytes": 218318,
+      "remote": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
+    }
+  ]
+}

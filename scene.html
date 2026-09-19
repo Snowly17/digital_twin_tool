@@ -1,0 +1,792 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { overflow: hidden; background: #0a0e17; font-family: 'Segoe UI', Arial, sans-serif; }
+            #container { width: 100vw; height: 100vh; position: relative; }
+            #info {
+                position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+                color: #667; font-size: 13px; z-index: 10;
+                background: rgba(10,14,23,0.6); padding: 4px 20px;
+                border-radius: 20px; border: 1px solid #1a2a44;
+                pointer-events: none;
+                backdrop-filter: blur(4px);
+            }
+            #info span { color: #88aadd; }
+            #status {
+                position: absolute; bottom: 16px; right: 20px;
+                color: #445; font-size: 11px; z-index: 10;
+                background: rgba(10,14,23,0.5); padding: 2px 12px;
+                border-radius: 12px;
+            }
+            #drag-hint {
+                position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+                color: #88aadd; font-size: 12px; z-index: 10;
+                background: rgba(10,14,23,0.7); padding: 4px 16px;
+                border-radius: 20px; border: 1px solid #1a2a44;
+                opacity: 0.7;
+                pointer-events: none;
+                transition: opacity 0.3s;
+            }
+            #drag-hint.hidden { opacity: 0; }
+
+            .floating-toggle {
+                position: absolute;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 30;
+                background: rgba(10,14,23,0.85);
+                backdrop-filter: blur(8px);
+                border: 1px solid #1a2a44;
+                border-radius: 30px;
+                padding: 8px 20px;
+                color: #88aadd;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: 0.2s;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                letter-spacing: 0.03em;
+            }
+            .floating-toggle:hover {
+                background: #1a2a44;
+                border-color: #4477aa;
+                color: #ffffff;
+                transform: translateX(-50%) scale(1.04);
+            }
+            .floating-toggle.hidden-btn {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-50%) scale(0.95);
+            }
+
+            #slider-panel {
+                position: absolute;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(10,14,23,0.88);
+                backdrop-filter: blur(10px);
+                border: 1px solid #1a2a44;
+                border-radius: 16px;
+                padding: 14px 24px;
+                display: flex;
+                gap: 18px;
+                align-items: center;
+                z-index: 20;
+                flex-wrap: wrap;
+                justify-content: center;
+                pointer-events: auto;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+                opacity: 0;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                transform: translateX(-50%) translateY(10px);
+            }
+            #slider-panel.visible {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                pointer-events: auto;
+            }
+            #slider-panel.hidden {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-50%) translateY(20px);
+            }
+            .slider-group {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+            }
+            .slider-group label {
+                color: #88aadd;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .slider-group input[type="range"] {
+                width: 72px;
+                height: 4px;
+                -webkit-appearance: none;
+                background: #1a2a44;
+                border-radius: 2px;
+                outline: none;
+            }
+            .slider-group input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 14px;
+                height: 14px;
+                background: #88aadd;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 0 10px rgba(136,170,221,0.3);
+                transition: 0.15s;
+            }
+            .slider-group input[type="range"]::-webkit-slider-thumb:hover {
+                transform: scale(1.15);
+                background: #aaccee;
+            }
+            .slider-group .value {
+                color: #eef2ff;
+                font-size: 11px;
+                font-weight: 500;
+                min-width: 32px;
+                text-align: center;
+            }
+            #slider-panel .section-title {
+                color: #667;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                margin-right: 2px;
+                font-weight: 600;
+            }
+            .panel-close-btn {
+                position: absolute;
+                top: -12px;
+                right: -12px;
+                background: #1a2a44;
+                border: 1px solid #2a3a55;
+                border-radius: 50%;
+                width: 26px;
+                height: 26px;
+                color: #88aadd;
+                cursor: pointer;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: 0.2s;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+            }
+            .panel-close-btn:hover {
+                background: #2a3a55;
+                border-color: #4477aa;
+                color: #ffffff;
+                transform: scale(1.1);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="info">🔄 拖拽旋转 · 滚轮缩放 · <span>点击物体</span> · 拖拽箭头移动</div>
+            <div id="drag-hint">📌 选中物体后拖动彩色箭头移动位置</div>
+            <div id="status">⚡ 12 个对象</div>
+
+            <button id="toggle-slider-btn" class="floating-toggle">☰ 变换</button>
+
+            <div id="slider-panel" class="hidden">
+                <span class="section-title">变换</span>
+                <div class="slider-group">
+                    <label>X</label>
+                    <input type="range" id="slider-x" min="-10" max="10" step="0.05" value="0">
+                    <span class="value" id="val-x">0.00</span>
+                </div>
+                <div class="slider-group">
+                    <label>Y</label>
+                    <input type="range" id="slider-y" min="0" max="10" step="0.05" value="0">
+                    <span class="value" id="val-y">0.00</span>
+                </div>
+                <div class="slider-group">
+                    <label>Z</label>
+                    <input type="range" id="slider-z" min="-10" max="10" step="0.05" value="0">
+                    <span class="value" id="val-z">0.00</span>
+                </div>
+                <div class="slider-group">
+                    <label>RotY</label>
+                    <input type="range" id="slider-rot" min="-180" max="180" step="1" value="0">
+                    <span class="value" id="val-rot">0°</span>
+                </div>
+                <div class="slider-group">
+                    <label>Scale</label>
+                    <input type="range" id="slider-scale" min="0.1" max="3.0" step="0.05" value="1.0">
+                    <span class="value" id="val-scale">1.00</span>
+                </div>
+                <button id="panel-close-btn" class="panel-close-btn" title="收起面板">✕</button>
+            </div>
+        </div>
+
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+        </script>
+
+        <script type="module">
+            import * as THREE from 'three';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+            import { TransformControls } from 'three/addons/controls/TransformControls.js';
+            import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+            const sceneData = {"objects": [{"id": "88351e07-ae19-4cc0-99fe-42feee0b910b", "type": "building", "name": "主厂房", "position": {"x": 0, "y": 0, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 8.0, "y": 1.2, "z": 5.0}, "bind_station_id": null, "custom_props": {"color": "#7a8a9a", "height": 4.0}}, {"id": "061189a7-5792-4a6a-ad92-33ecbe4d0b36", "type": "equipment", "name": "设备 #01", "position": {"x": -2, "y": 0, "z": -2}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.8, "y": 0.6, "z": 0.6}, "bind_station_id": null, "custom_props": {"status": "运行中", "temperature": 45}}, {"id": "728f9240-fb95-4424-a9dd-51d0a5f3c994", "type": "equipment", "name": "设备 #02", "position": {"x": 2, "y": 0, "z": -2}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.8, "y": 0.6, "z": 0.6}, "bind_station_id": null, "custom_props": {"status": "运行中", "temperature": 45}}, {"id": "cfc78fa7-ba34-4a97-a863-10ebd6aada3e", "type": "equipment", "name": "设备 #03", "position": {"x": -2, "y": 0, "z": 2}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.8, "y": 0.6, "z": 0.6}, "bind_station_id": null, "custom_props": {"status": "运行中", "temperature": 45}}, {"id": "94ebbf05-1a1a-4608-bb1a-b4228c7629bd", "type": "equipment", "name": "设备 #04", "position": {"x": 2, "y": 0, "z": 2}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.8, "y": 0.6, "z": 0.6}, "bind_station_id": null, "custom_props": {"status": "运行中", "temperature": 45}}, {"id": "b097323d-38b2-41af-ad50-f555881f177d", "type": "equipment", "name": "设备 #05", "position": {"x": 0, "y": 0, "z": -3.5}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.8, "y": 0.6, "z": 0.6}, "bind_station_id": null, "custom_props": {"status": "运行中", "temperature": 45}}, {"id": "8244aade-4051-4fda-8534-9a560268c284", "type": "equipment", "name": "设备 #06", "position": {"x": 0, "y": 0, "z": 3.5}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.8, "y": 0.6, "z": 0.6}, "bind_station_id": null, "custom_props": {"status": "运行中", "temperature": 45}}, {"id": "eaf19787-ab9b-4fcd-b7d7-7d2220a5c3a8", "type": "workstation", "name": "工位 #01", "position": {"x": -4, "y": 0, "z": -1}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.4, "y": 0.3, "z": 0.4}, "bind_station_id": null, "custom_props": {"operator": "工人1"}}, {"id": "e8b8a3cb-b0ed-42e8-a2a4-275d42c1a135", "type": "workstation", "name": "工位 #02", "position": {"x": 4, "y": 0, "z": -1}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.4, "y": 0.3, "z": 0.4}, "bind_station_id": null, "custom_props": {"operator": "工人2"}}, {"id": "abffe2fc-92d7-4e2a-add7-9d59a5b7abc8", "type": "workstation", "name": "工位 #03", "position": {"x": -4, "y": 0, "z": 1}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.4, "y": 0.3, "z": 0.4}, "bind_station_id": null, "custom_props": {"operator": "工人3"}}, {"id": "c83f7f22-1180-485c-8f3c-960183bccc08", "type": "workstation", "name": "工位 #04", "position": {"x": 4, "y": 0, "z": 1}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 0.4, "y": 0.3, "z": 0.4}, "bind_station_id": null, "custom_props": {"operator": "工人4"}}, {"id": "8362df09-880c-47e0-a7df-b589bbf5072b", "type": "building_tall", "name": "高层建筑", "position": {"x": -0.9662400820524595, "y": 0, "z": -1.5375014228435129}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1.5, "y": 2.0, "z": 1.5}, "bind_station_id": null, "custom_props": {"color": "#5a7a9a", "category": "建筑"}}], "selectedId": "8362df09-880c-47e0-a7df-b589bbf5072b"};
+            const compDefs = {"charger_fast": {"name": "快充桩", "type": "charger_fast", "default_color": "#4a90d9", "default_scale": {"x": 1.0, "y": 1.0, "z": 1.0}}, "charger_slow": {"name": "慢充桩", "type": "charger_slow", "default_color": "#5cb85c", "default_scale": {"x": 1.0, "y": 1.0, "z": 1.0}}, "charger_super": {"name": "超充桩", "type": "charger_super", "default_color": "#9b59b6", "default_scale": {"x": 1.2, "y": 1.2, "z": 1.2}}, "building": {"name": "建筑", "type": "building", "default_color": "#6a8a9a", "default_scale": {"x": 2.0, "y": 1.0, "z": 1.5}}, "building_tall": {"name": "高层建筑", "type": "building_tall", "default_color": "#5a7a9a", "default_scale": {"x": 1.5, "y": 2.0, "z": 1.5}}, "tree": {"name": "树木", "type": "tree", "default_color": "#3a8a3a", "default_scale": {"x": 1.0, "y": 1.0, "z": 1.0}}, "tree_pine": {"name": "松树", "type": "tree_pine", "default_color": "#2a6a2a", "default_scale": {"x": 0.8, "y": 1.0, "z": 0.8}}, "lamp": {"name": "路灯", "type": "lamp", "default_color": "#f1c40f", "default_scale": {"x": 0.6, "y": 1.0, "z": 0.6}}, "road_straight": {"name": "直线道路", "type": "road_straight", "default_color": "#555555", "default_scale": {"x": 1.0, "y": 0.05, "z": 0.3}}, "road_curve": {"name": "弯道", "type": "road_curve", "default_color": "#555555", "default_scale": {"x": 1.0, "y": 0.05, "z": 1.0}}, "car": {"name": "轿车", "type": "car", "default_color": "#e74c3c", "default_scale": {"x": 0.8, "y": 0.5, "z": 0.4}}, "truck": {"name": "货车", "type": "truck", "default_color": "#3498db", "default_scale": {"x": 1.2, "y": 0.6, "z": 0.5}}};
+            const objects = sceneData.objects || [];
+            const selectedId = sceneData.selectedId || '';
+
+            console.log(`✅ 加载 {objects.length} 个对象`);
+
+            const container = document.getElementById('container');
+            const width = container.clientWidth || window.innerWidth;
+            const height = container.clientHeight || window.innerHeight;
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0e17);
+            scene.fog = new THREE.Fog(0x0a0e17, 30, 70);
+
+            const camera = new THREE.PerspectiveCamera(40, width/height, 0.1, 200);
+            camera.position.set(12, 10, 15);
+            camera.lookAt(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(width, height);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0';
+            labelRenderer.domElement.style.left = '0';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            container.appendChild(labelRenderer.domElement);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.4;
+            controls.target.set(0, 1.5, 0);
+            controls.maxPolarAngle = Math.PI / 2.1;
+            controls.minDistance = 3;
+            controls.maxDistance = 50;
+
+            const transformControls = new TransformControls(camera, renderer.domElement);
+            transformControls.setMode('translate');
+            transformControls.setSize(0.8);
+            scene.add(transformControls);
+
+            transformControls.addEventListener('dragging-changed', (event) => {
+                controls.enabled = !event.value;
+            });
+
+            // ---------- 滑块 ----------
+            const sliderPanel = document.getElementById('slider-panel');
+            const toggleBtn = document.getElementById('toggle-slider-btn');
+            const closeBtn = document.getElementById('panel-close-btn');
+            const sliderX = document.getElementById('slider-x');
+            const sliderY = document.getElementById('slider-y');
+            const sliderZ = document.getElementById('slider-z');
+            const sliderRot = document.getElementById('slider-rot');
+            const sliderScale = document.getElementById('slider-scale');
+            const valX = document.getElementById('val-x');
+            const valY = document.getElementById('val-y');
+            const valZ = document.getElementById('val-z');
+            const valRot = document.getElementById('val-rot');
+            const valScale = document.getElementById('val-scale');
+
+            let currentObjectId = null;
+            let currentObjectGroup = null;
+
+            // ---------- 收起/展开 ----------
+            if (localStorage.getItem('sliderPanelHidden') === 'true') {
+                sliderPanel.classList.remove('visible');
+                sliderPanel.classList.add('hidden');
+                toggleBtn.classList.remove('hidden-btn');
+                toggleBtn.textContent = '☰ 变换';
+            } else {
+                sliderPanel.classList.add('visible');
+                sliderPanel.classList.remove('hidden');
+                toggleBtn.classList.add('hidden-btn');
+                toggleBtn.textContent = '━';
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                sliderPanel.classList.remove('hidden');
+                sliderPanel.classList.add('visible');
+                toggleBtn.classList.add('hidden-btn');
+                toggleBtn.textContent = '━';
+                localStorage.setItem('sliderPanelHidden', 'false');
+            });
+
+            closeBtn.addEventListener('click', () => {
+                sliderPanel.classList.add('hidden');
+                sliderPanel.classList.remove('visible');
+                toggleBtn.classList.remove('hidden-btn');
+                toggleBtn.textContent = '☰ 变换';
+                localStorage.setItem('sliderPanelHidden', 'true');
+            });
+
+            function updateSlidersFromObject(group) {
+                if (!group) return;
+                const pos = group.position;
+                const rot = group.rotation;
+                const scl = group.scale;
+                sliderX.value = pos.x.toFixed(3);
+                sliderY.value = pos.y.toFixed(3);
+                sliderZ.value = pos.z.toFixed(3);
+                valX.textContent = pos.x.toFixed(2);
+                valY.textContent = pos.y.toFixed(2);
+                valZ.textContent = pos.z.toFixed(2);
+                const deg = THREE.MathUtils.radToDeg(rot.y);
+                sliderRot.value = deg.toFixed(1);
+                valRot.textContent = deg.toFixed(1) + '°';
+                const avgScale = (scl.x + scl.y + scl.z) / 3;
+                sliderScale.value = avgScale.toFixed(3);
+                valScale.textContent = avgScale.toFixed(2);
+            }
+
+            function updateObjectFromSliders(group) {
+                if (!group) return;
+                const x = parseFloat(sliderX.value);
+                const y = parseFloat(sliderY.value);
+                const z = parseFloat(sliderZ.value);
+                const rotDeg = parseFloat(sliderRot.value);
+                const scaleVal = parseFloat(sliderScale.value);
+                group.position.set(x, y, z);
+                group.rotation.y = THREE.MathUtils.degToRad(rotDeg);
+                group.scale.set(scaleVal, scaleVal, scaleVal);
+                valX.textContent = x.toFixed(2);
+                valY.textContent = y.toFixed(2);
+                valZ.textContent = z.toFixed(2);
+                valRot.textContent = rotDeg.toFixed(1) + '°';
+                valScale.textContent = scaleVal.toFixed(2);
+            }
+
+            const sliderChange = () => {
+                if (currentObjectGroup) {
+                    updateObjectFromSliders(currentObjectGroup);
+                }
+            };
+            sliderX.addEventListener('input', sliderChange);
+            sliderY.addEventListener('input', sliderChange);
+            sliderZ.addEventListener('input', sliderChange);
+            sliderRot.addEventListener('input', sliderChange);
+            sliderScale.addEventListener('input', sliderChange);
+
+            // ---------- 灯光 ----------
+            const ambient = new THREE.AmbientLight(0x334466, 0.8);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffeedd, 1.8);
+            sun.position.set(10, 20, 8);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            const d = 20;
+            sun.shadow.camera.left = -d;
+            sun.shadow.camera.right = d;
+            sun.shadow.camera.top = d;
+            sun.shadow.camera.bottom = -d;
+            sun.shadow.camera.near = 1;
+            sun.shadow.camera.far = 60;
+            scene.add(sun);
+
+            const fill = new THREE.DirectionalLight(0x4488ff, 0.4);
+            fill.position.set(-10, 5, -10);
+            scene.add(fill);
+
+            // ---------- 地面 ----------
+            const grid = new THREE.GridHelper(20, 20, 0x4477aa, 0x1a2a44);
+            grid.position.y = -0.05;
+            scene.add(grid);
+
+            const ground = new THREE.Mesh(
+                new THREE.CircleGeometry(12, 64),
+                new THREE.MeshStandardMaterial({
+                    color: 0x111a2a, transparent: true, opacity: 0.6,
+                    roughness: 0.9, side: THREE.DoubleSide
+                })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.05;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const origin = new THREE.Mesh(
+                new THREE.SphereGeometry(0.08, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xff0000, emissiveIntensity: 0.2 })
+            );
+            origin.position.set(0, 0.08, 0);
+            scene.add(origin);
+
+            // ---------- 对象映射 ----------
+            const objectMeshes = [];
+            let clickables = [];
+
+            function getColor(hex) {
+                return new THREE.Color(hex);
+            }
+
+            function createCharger(params) {
+                const group = new THREE.Group();
+                const color = getColor(params.color || '#4a90d9');
+                const height = params.height || 2.0;
+                const width = params.width || 0.3;
+
+                const pillar = new THREE.Mesh(
+                    new THREE.BoxGeometry(width, height, width),
+                    new THREE.MeshStandardMaterial({
+                        color: color,
+                        emissive: color,
+                        emissiveIntensity: 0.15,
+                        roughness: 0.3,
+                        metalness: 0.1
+                    })
+                );
+                pillar.position.y = height/2 + 0.1;
+                pillar.castShadow = true;
+                pillar.receiveShadow = true;
+                group.add(pillar);
+
+                const top = new THREE.Mesh(
+                    new THREE.SphereGeometry(width * 0.4, 8, 8),
+                    new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3 })
+                );
+                top.position.y = height + 0.08;
+                group.add(top);
+
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(width * 0.7, 0.025, 8, 16),
+                    new THREE.MeshStandardMaterial({
+                        color: color, emissive: color, emissiveIntensity: 0.5,
+                        transparent: true, opacity: 0.6
+                    })
+                );
+                ring.position.y = height + 0.05;
+                ring.rotation.x = Math.PI / 2;
+                group.add(ring);
+
+                const div = document.createElement('div');
+                div.textContent = params.label || '⚡';
+                div.style.cssText = `
+                    color: #eef2ff; font-size: 10px; font-weight: 600;
+                    text-shadow: 0 0 8px rgba(0,0,0,0.9);
+                    background: rgba(10,14,23,0.6);
+                    padding: 1px 8px; border-radius: 12px;
+                    border: 1px solid rgba(255,255,255,0.05);
+                    backdrop-filter: blur(2px);
+                `;
+                const label = new CSS2DObject(div);
+                label.position.set(0, height + 0.4, 0);
+                group.add(label);
+
+                group.userData = { ring, speed: 0.5 + Math.random() * 0.5 };
+                return group;
+            }
+
+            function createBuilding(params) {
+                const group = new THREE.Group();
+                const w = params.width || 2.0;
+                const h = params.height || 3.0;
+                const d = params.depth || 1.5;
+                const color = getColor(params.color || '#6a8a9a');
+
+                const mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(w, h, d),
+                    new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.2 })
+                );
+                mesh.position.y = h/2;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                group.add(mesh);
+
+                const winColor = getColor('#f1c40f');
+                for (let i = 0; i < 4; i++) {
+                    const win = new THREE.Mesh(
+                        new THREE.PlaneGeometry(0.15, 0.2),
+                        new THREE.MeshStandardMaterial({ color: winColor, emissive: winColor, emissiveIntensity: 0.2, transparent: true, opacity: 0.4 })
+                    );
+                    win.position.set(0.51, 0.3 + i * 0.6, 0);
+                    group.add(win);
+                    const win2 = win.clone();
+                    win2.position.set(-0.51, 0.3 + i * 0.6, 0);
+                    group.add(win2);
+                }
+                return group;
+            }
+
+            function createTree(params) {
+                const group = new THREE.Group();
+                const scale = params.scale || 1.0;
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06 * scale, 0.08 * scale, 0.6 * scale, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x5a3a2a, roughness: 0.9 })
+                );
+                trunk.position.y = 0.3 * scale;
+                trunk.castShadow = true;
+                group.add(trunk);
+
+                const crown = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.4 * scale, 8, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x3a8a3a, roughness: 0.8 })
+                );
+                crown.position.y = 0.8 * scale + 0.2 * scale;
+                crown.castShadow = true;
+                group.add(crown);
+
+                return group;
+            }
+
+            function createLamp(params) {
+                const group = new THREE.Group();
+                const pole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.02, 0.025, 1.2, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.6 })
+                );
+                pole.position.y = 0.6;
+                group.add(pole);
+
+                const arm = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.3, 0.02, 0.02),
+                    new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.6 })
+                );
+                arm.position.set(0.15, 1.2, 0);
+                group.add(arm);
+
+                const light = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.06, 6, 6),
+                    new THREE.MeshStandardMaterial({ color: 0xf1c40f, emissive: 0xf1c40f, emissiveIntensity: 0.8 })
+                );
+                light.position.set(0.3, 1.18, 0);
+                group.add(light);
+
+                return group;
+            }
+
+            function createRoadStraight(params) {
+                const group = new THREE.Group();
+                const w = params.width || 1.0;
+                const d = params.depth || 0.3;
+                const road = new THREE.Mesh(
+                    new THREE.BoxGeometry(w, 0.05, d),
+                    new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 })
+                );
+                road.position.y = 0.025;
+                road.receiveShadow = true;
+                group.add(road);
+
+                const line = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.02, 0.06, d * 0.8),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff })
+                );
+                line.position.y = 0.08;
+                group.add(line);
+                return group;
+            }
+
+            function createCar(params) {
+                const group = new THREE.Group();
+                const color = getColor(params.color || '#e74c3c');
+                const body = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.8, 0.2, 0.4),
+                    new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.6 })
+                );
+                body.position.y = 0.15;
+                body.castShadow = true;
+                group.add(body);
+
+                const cabin = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.4, 0.15, 0.25),
+                    new THREE.MeshStandardMaterial({ color: 0x3498db, roughness: 0.2, metalness: 0.1 })
+                );
+                cabin.position.set(0.05, 0.32, 0);
+                group.add(cabin);
+
+                const wheelPos = [[-0.25, 0.05, 0.15], [0.25, 0.05, 0.15], [-0.25, 0.05, -0.15], [0.25, 0.05, -0.15]];
+                wheelPos.forEach(pos => {
+                    const wheel = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.06, 0.06, 0.04, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x222222 })
+                    );
+                    wheel.rotation.x = Math.PI / 2;
+                    wheel.position.set(pos[0], pos[1], pos[2]);
+                    group.add(wheel);
+                });
+                return group;
+            }
+
+            const objectMap = {
+                'charger_fast': (obj) => createCharger({ color: '#4a90d9', height: 2.0, width: 0.3, label: '快充' }),
+                'charger_slow': (obj) => createCharger({ color: '#5cb85c', height: 1.5, width: 0.25, label: '慢充' }),
+                'charger_super': (obj) => createCharger({ color: '#9b59b6', height: 2.5, width: 0.35, label: '超充' }),
+                'building': (obj) => createBuilding(obj.custom_props || {}),
+                'building_tall': (obj) => createBuilding({ width: 1.5, height: 6.0, depth: 1.5, color: '#5a7a9a' }),
+                'tree': (obj) => createTree({ scale: 1.0 }),
+                'tree_pine': (obj) => createTree({ scale: 0.8 }),
+                'lamp': (obj) => createLamp({}),
+                'road_straight': (obj) => createRoadStraight({}),
+                'car': (obj) => createCar({ color: '#e74c3c' }),
+                'truck': (obj) => {
+                    const group = new THREE.Group();
+                    const cab = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.5, 0.2, 0.3),
+                        new THREE.MeshStandardMaterial({ color: 0x3498db, roughness: 0.3, metalness: 0.4 })
+                    );
+                    cab.position.y = 0.15;
+                    cab.castShadow = true;
+                    group.add(cab);
+                    const cargo = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.7, 0.35, 0.5),
+                        new THREE.MeshStandardMaterial({ color: 0xecf0f1, roughness: 0.7 })
+                    );
+                    cargo.position.set(0.25, 0.3, 0);
+                    cargo.castShadow = true;
+                    group.add(cargo);
+                    return group;
+                }
+            };
+
+            const defaultGenerator = (obj) => {
+                const group = new THREE.Group();
+                const mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.5, 0.5, 0.5),
+                    new THREE.MeshStandardMaterial({ color: 0x666666 })
+                );
+                mesh.position.y = 0.25;
+                group.add(mesh);
+                return group;
+            };
+
+            objects.forEach((obj, index) => {
+                const generator = objectMap[obj.type] || defaultGenerator;
+                const model = generator(obj);
+                const pos = obj.position || { x: 0, y: 0, z: 0 };
+                const scale = obj.scale || { x: 1, y: 1, z: 1 };
+                const rot = obj.rotation || { x: 0, y: 0, z: 0 };
+
+                model.position.set(pos.x, pos.y || 0, pos.z);
+                model.scale.set(scale.x, scale.y, scale.z);
+                model.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
+                model.userData = { objectId: obj.id, type: obj.type };
+
+                scene.add(model);
+                objectMeshes.push(model);
+
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.userData.parentId = obj.id;
+                        clickables.push(child);
+                    }
+                });
+            });
+
+            console.log(`✅ 生成 {objectMeshes.length} 个对象组`);
+
+            // ---------- 点击拾取（使用 window.parent.location.href） ----------
+            const raycaster = new THREE.Raycaster();
+            const pointer = new THREE.Vector2();
+            const dragHint = document.getElementById('drag-hint');
+
+            renderer.domElement.addEventListener('click', (event) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+                raycaster.setFromCamera(pointer, camera);
+                const intersects = raycaster.intersectObjects(clickables);
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0].object;
+                    const parentId = hit.userData.parentId;
+                    if (parentId) {
+                        const selectedGroup = objectMeshes.find(g => g.userData.objectId === parentId);
+                        if (selectedGroup) {
+                            // 取消之前的高亮
+                            objectMeshes.forEach(group => {
+                                group.traverse((child) => {
+                                    if (child.isMesh && child.material._origEmissive) {
+                                        child.material.emissive.copy(child.material._origEmissive);
+                                    }
+                                });
+                            });
+                            // 高亮选中的组
+                            selectedGroup.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    if (!child.material._origEmissive) {
+                                        child.material._origEmissive = child.material.emissive.clone();
+                                    }
+                                    child.material.emissive.set(0x4488ff);
+                                    child.material.emissiveIntensity = 0.4;
+                                }
+                            });
+                            transformControls.attach(selectedGroup);
+                            dragHint.classList.remove('hidden');
+                            currentObjectId = parentId;
+                            currentObjectGroup = selectedGroup;
+                            updateSlidersFromObject(selectedGroup);
+                            sliderPanel.classList.remove('hidden');
+                            sliderPanel.classList.add('visible');
+                            toggleBtn.classList.add('hidden-btn');
+                            toggleBtn.textContent = '━';
+                            localStorage.setItem('sliderPanelHidden', 'false');
+
+                            // 🔥 使用 window.parent.location.href 直接导航
+                            const params = new URLSearchParams();
+                            params.set('selected', parentId);
+                            const url = new URL(window.parent.location.href);
+                            url.search = params.toString();
+                            window.parent.location.href = url.toString();
+                        }
+                    }
+                } else {
+                    // 点击空白区域取消选中
+                    transformControls.detach();
+                    objectMeshes.forEach(group => {
+                        group.traverse((child) => {
+                            if (child.isMesh && child.material._origEmissive) {
+                                child.material.emissive.copy(child.material._origEmissive);
+                            }
+                        });
+                    });
+                    dragHint.classList.add('hidden');
+                    currentObjectId = null;
+                    currentObjectGroup = null;
+                    const url = new URL(window.parent.location.href);
+                    url.searchParams.delete('selected');
+                    window.parent.location.href = url.toString();
+                }
+            });
+
+            // ---------- 双击切换自动旋转 ----------
+            renderer.domElement.addEventListener('dblclick', () => {
+                controls.autoRotate = !controls.autoRotate;
+            });
+
+            // ---------- 窗口自适应 ----------
+            function resize() {
+                const w = container.clientWidth || window.innerWidth;
+                const h = container.clientHeight || window.innerHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+                labelRenderer.setSize(w, h);
+            }
+            window.addEventListener('resize', resize);
+
+            // ---------- 动画循环 ----------
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+                labelRenderer.render(scene, camera);
+            }
+            animate();
+
+            console.log('🚀 场景加载完成 (URL参数通信)');
+        </script>
+    </body>
+    </html>
+    

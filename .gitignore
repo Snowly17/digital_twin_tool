@@ -1,0 +1,80 @@
+# Python 虚拟环境和缓存
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE 配置
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 敏感信息：所有 secrets.toml（无论路径）
+**/secrets.toml
+secrets.toml
+# 环境变量文件（依赖里含 python-dotenv，防止误提交密钥）
+.env
+.env.*
+!.env.example
+
+# ⚠️ 只忽略 secrets，**不能忽略整个 .streamlit/**！
+#    .streamlit/config.toml 里的 enableStaticServing = true 是 3D 场景加载
+#    /app/static/models/*.glb 的前提，禁止提交会导致线上模型全部加载失败。
+#    官方要求：配置文件必须位于仓库根目录的 .streamlit/config.toml。
+#    历史坑：这里原本写的是「/.streamlit/」，把 config.toml 也一起忽略了。
+
+# 数据库文件（本地 SQLite）
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+user_data.db
+
+# 临时文件与构建产物
+*.log
+*.tmp
+# 验证工具导出的中间数据（tools/export_payload.py 的输出）
+.tmp/
+# pytest 的临时目录（含大量只读锁文件，误提交会污染仓库）
+.pytest_tmp/
+.DS_Store
+build/
+dist/
+hooks/
+2.31.0
+
+# 本地可选的 LSTM 依赖（云端只认一个依赖文件，勿提交以免冲突）
+requirements-lstm.txt
+
+# ==================== 开发过程产物（不提交）====================
+# exports/ 是 core/path_manager.py 自动创建的导出目录，里面是场景备份 JSON、
+# 改代码前的 app.py 备份、以及 .glb.bak。合计约 3.5 MB，含完整场景数据，
+# 不属于项目组成部分，公开仓库里没必要出现。
+exports/
+# 各种手写备份：*.bak / *.bak_xxx / app.py.bak_before_P2_...
+*.bak
+*.bak_*
+*.backup
+
+# PyInstaller 生成文件
+*.spec
+
+# ==================== 大数据集（不提交）====================
+# 说明：data/ 下是训练与历史数据集，合计约 8.8 GB
+#   · 其中只有 data/station-level/station_occupancy_1h.csv（约 73 MB）被
+#     app.py 直接读取；features/ 下四个 CSV 合计约 2.4 GB 是 LSTM 训练样本
+#   · GitHub 单文件上限 100 MB、仓库建议 <1 GB；Streamlit Cloud 亦不适合
+#     携带如此体量。因此整目录排除，缺失时应用会自动降级（见 DEPLOY.md）
+#   · 需要完整功能时按 DEPLOY.md「数据集准备」自行放置
+#   · data/ 会原样留在本地，只是不进 Git —— 不要为了部署而删除它
+data/
+
+# 本地工具脚本（非核心）
+tools/optimize_word_document.bat
+tools/word_document_optimizer.py

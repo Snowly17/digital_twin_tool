@@ -1,0 +1,11 @@
+[server]
+# 让 Streamlit 把 <项目根>/static 目录挂在 /app/static/ 下提供
+# 3D 场景的 GLB 模型走本地静态服务，不再依赖 Supabase 公网 CDN
+enableStaticServing = true
+
+[theme]
+base = "dark"
+primaryColor = "#4a90d9"
+backgroundColor = "#0a0e17"
+secondaryBackgroundColor = "#161b26"
+textColor = "#eef2ff"

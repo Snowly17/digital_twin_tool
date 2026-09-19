@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "properties": {"name": "快充A", "type": "fast"}, "geometry": {"type": "Point", "coordinates": [114.057, 22.543]}},
+    {"type": "Feature", "properties": {"name": "慢充B", "type": "slow"}, "geometry": {"type": "Point", "coordinates": [114.058, 22.544]}},
+    {"type": "Feature", "properties": {"name": "超充C", "type": "super"}, "geometry": {"type": "Point", "coordinates": [114.059, 22.545]}},
+    {"type": "Feature", "properties": {"name": "树1", "type": "tree"}, "geometry": {"type": "Point", "coordinates": [114.060, 22.546]}},
+    {"type": "Feature", "properties": {"name": "主干道", "highway": "primary"}, "geometry": {"type": "LineString", "coordinates": [[114.055, 22.542], [114.062, 22.548]]}},
+    {"type": "Feature", "properties": {"name": "商业楼", "use": "commercial", "height": 12}, "geometry": {"type": "Polygon", "coordinates": [[[114.061, 22.546], [114.063, 22.546], [114.063, 22.548], [114.061, 22.548], [114.061, 22.546]]]}}
+  ]
+}
