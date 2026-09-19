@@ -1,0 +1,27 @@
+# =============================================================================
+# 换行符策略
+#
+# ⚠️ shell 脚本必须是 LF。如果在 Windows 上被 checkout 成 CRLF，
+#    放进 Linux 容器会报 "bad interpreter: No such file or directory"
+#    （因为 shebang 行末尾多了 \r）。
+# =============================================================================
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.dockerignore  text eol=lf
+
+# 其余文本文件按各平台默认换行符处理
+*.py            text
+*.js            text
+*.css           text
+*.md            text
+*.toml          text
+*.json          text
+
+# 二进制资源不做换行符转换（GLB 被改动会直接损坏）
+*.glb           binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.pth           binary
+*.woff          binary
+*.woff2         binary

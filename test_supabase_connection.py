@@ -1,20 +1,35 @@
 # test_supabase_connection.py
-import sys
-import os
-
-# 🔧 强制设置编码
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-
+#
+# ⚠️ 本文件原先硬编码了真实的 Supabase URL 与 anon key（本仓库为公开仓库）。
+#    现已改为从 .streamlit/secrets.toml 或环境变量读取，密钥不进版本库。
+#
+# 本地运行前，在 .streamlit/secrets.toml 里配置：
+#     SUPABASE_URL      = "https://xxxx.supabase.co"
+#     SUPABASE_ANON_KEY = "sb_publishable_xxxx"
+#
+# 用法：python test_supabase_connection.py
 import json
-from supabase import create_client
+import os
+import sys
 
-# 🔥 你的 Supabase 凭据
-SUPABASE_URL = "https://gczvyxbfiawnjoviqncj.supabase.co"
-SUPABASE_ANON_KEY = "sb_publishable_LzMmeKqLbPWrgT15jMWlBQ_wQSof4oz"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from core.console import enable_safe_console, read_secret
+
+enable_safe_console()
+
+from supabase import create_client  # noqa: E402
+
+SUPABASE_URL = read_secret("SUPABASE_URL")
+SUPABASE_ANON_KEY = read_secret("SUPABASE_ANON_KEY")
+
 
 def test_connection():
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        print("❌ 未配置 SUPABASE_URL / SUPABASE_ANON_KEY")
+        print("   请写入 .streamlit/secrets.toml，或设置同名环境变量。")
+        return
+
     try:
         print("🔌 正在连接 Supabase...")
         client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -44,6 +59,7 @@ def test_connection():
         print("  1. SUPABASE_URL 是否正确")
         print("  2. SUPABASE_ANON_KEY 是否正确（不是 service_role）")
         print("  3. 网络是否通畅（可能需要代理）")
+
 
 if __name__ == "__main__":
     test_connection()

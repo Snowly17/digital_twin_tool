@@ -16,12 +16,12 @@ from typing import Optional, Dict, Any, List
 # 放宽控制台编码错误策略：非 UTF-8 控制台（简体中文 Windows 的 GBK）上，
 # 本项目 200+ 处 emoji print 会抛 UnicodeEncodeError 使应用崩溃。详见 core/console.py
 try:
-    from core.console import enable_safe_console
+    from core.console import enable_safe_console, read_secret
 except ModuleNotFoundError:
     from pathlib import Path as _Path
 
     sys.path.insert(0, str(_Path(__file__).resolve().parent))
-    from core.console import enable_safe_console
+    from core.console import enable_safe_console, read_secret
 
 enable_safe_console()
 
@@ -5003,8 +5003,12 @@ def generate_scene_html():
     story = story_mgr.get_story(story_id) if story_id else None
 
     import json
-    supabase_url = st.secrets.get("SUPABASE_URL", "")
-    supabase_anon_key = st.secrets.get("SUPABASE_ANON_KEY", "")
+    # ⚠️ 不要用 st.secrets.get()：secrets.toml 不存在时 st.secrets 会抛
+    #    StreamlitSecretNotFoundError（它不像普通 dict 那样返回默认值）。
+    #    generate_scene_html() 每次渲染场景都会执行，一旦抛异常整个应用启动即崩。
+    #    read_secret() 按 st.secrets -> 环境变量 -> 默认值 的顺序安全取值。
+    supabase_url = read_secret("SUPABASE_URL")
+    supabase_anon_key = read_secret("SUPABASE_ANON_KEY")
     has_supabase = bool(supabase_url and supabase_anon_key)
     supabase_url_escaped = json.dumps(supabase_url)
     supabase_anon_key_escaped = json.dumps(supabase_anon_key)
@@ -7638,6 +7642,23 @@ def generate_scene_html():
                                 updateProgress();
                                 console.log(`✅ 模型加载成功: ${{url}}`);
                                 resolve(model);
+                            }}
+                        }},
+                        undefined,
+                        (err) => {{
+                            // 🔥 修复：原先没有 onError 回调。
+                            //    GLTFLoader 只有在「请求成功且解析成功」时才调用 onLoad；
+                            //    一旦 404 / CORS / 解析失败，走的就是这里。
+                            //    之前没人处理，loadedModels 不递增，进度永远凑不齐，
+                            //    遮罩就会一直停在 0% 转圈、界面假死。
+                            //    现在显式失败：立即计数 + 提示，并回退到程序化生成。
+                            if (!resolved) {{
+                                resolved = true;
+                                clearTimeout(timeoutId);
+                                loadedModels++;
+                                updateProgress();
+                                console.warn(`⚠️ 模型加载失败，回退程序化生成: ${{url}}`, err);
+                                resolve(null);
                             }}
                         }},
                     );

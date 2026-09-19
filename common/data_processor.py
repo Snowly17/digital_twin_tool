@@ -14,6 +14,7 @@ from common import baselines
 from common.lstm_utils import build_lstm_input_features
 import streamlit as st
 from core.db_utils import safe_sqlite_connect
+from core.console import read_secret
 from core.path_manager import (
     DATA_DIR,  # ← 添加这一行
     STATION_OCC_PATH, STATION_INF_PATH, STATION_EPRICE_PATH,
@@ -64,8 +65,13 @@ def _load_weather_cached():
 
 class DataProcessor:
     def __init__(self, use_real_data=False, data_level='region'):
-        self.api_key = "a8c1a81e1c5f5f6ca9e024f59a69bf5e"
-        self.secret_key = "1387378e512c6aacd3ffd79f40f656c7"
+        # 高德地图 Web 服务 key 与签名私钥。
+        # ⚠️ 严禁在此硬编码真实密钥（本仓库为公开仓库）。
+        #    本地：写入 .streamlit/secrets.toml（已被 .gitignore 排除）
+        #    云端：写入 Streamlit Community Cloud 的 Secrets 设置
+        #    未配置时 _fetch_from_amap() 会跳过 API 请求，功能自动降级。
+        self.api_key = read_secret("AMAP_API_KEY")
+        self.secret_key = read_secret("AMAP_SECRET_KEY")
         self.cache_db = "charger_cache.db"
         self.db_path = self.cache_db
         self.cache_hours = 24

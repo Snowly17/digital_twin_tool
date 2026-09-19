@@ -1,7 +1,20 @@
+---
+title: 智孪 · 数字孪生快速建模工具
+emoji: 🏗️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 智孪 · 数字孪生轻量化快速建模工具
 
 面向**数字孪生方向从业者**的单页 Streamlit 应用：在浏览器里快速搭出一个可交互的
 3D 数字孪生场景，并通过「思索 · 交互式教学」解释它背后的概念与数据链路。
+
+> 上面的 YAML 头部供 **Hugging Face Spaces** 识别（Docker 模式）。
+> GitHub 会把它渲染成一张小表格，不影响阅读。
 
 ---
 
@@ -61,12 +74,35 @@ streamlit run app.py
 
 ## 部署
 
-完整步骤与踩坑记录见 **[DEPLOY.md](DEPLOY.md)**，包含：
+### 先选平台（这一步决定了 3D 场景能不能用）
 
-- GitHub 推送流程与仓库体积控制策略
-- Streamlit Community Cloud 部署（含 Secrets 配置）
-- 四个真实踩过的坑（静态资源映射、超大数据集、torch 体积、emoji 编码）
-- 部署后自检清单
+| 平台 | 费用 | 3D 场景 / 思索 | 说明 |
+|---|---|---|---|
+| Streamlit Community Cloud | 免费 | ❌ **全空** | 不支持 `server.enableStaticServing`，静态资源全部被 MIME 检查拒绝。改代码无法修复 |
+| **Railway**（推荐） | 约 $3/月 | ✅ 完整可用 | 不休眠、响应快；有 $5 试用额度 |
+| Hugging Face Spaces | 有免费层 | ✅ 完整可用 | 会休眠（约 30 秒冷启动）；主站国内访问受限 |
+| 本地运行 | 免费 | ✅ 完整可用 | `streamlit run app.py` |
+
+Railway 与 HF Spaces 使用**同一套 Docker 文件**，应用代码零改动。
+平台选择的原因详见 **[DEPLOY.md](DEPLOY.md)** 坑 ①。
+
+### 各平台文档
+
+| 文档 | 内容 |
+|---|---|
+| **[DEPLOY.md](DEPLOY.md)** | 总览：仓库体积控制、四个真实踩过的坑、Streamlit Cloud 限制说明 |
+| **[DEPLOY-RAILWAY.md](DEPLOY-RAILWAY.md)** | Railway 部署步骤、**费用预估与省额度操作**、常见问题 |
+| **[DEPLOY-HF.md](DEPLOY-HF.md)** | Hugging Face Spaces 部署步骤 |
+
+### 常用自检
+
+```bash
+# 提交到公开仓库前扫一遍明文凭据（应无「高危」命中）
+python tools/scan_creds.py
+```
+
+部署后必看：浏览器 F12 → Console 应出现 `📦 模型源:` 和 `✅ 模型加载成功:`。
+看到 `MIME type of "text/html"` 说明静态服务没生效。
 
 ---
 

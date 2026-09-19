@@ -1,0 +1,58 @@
+# =============================================================================
+# Docker 构建上下文排除清单
+#
+# ⚠️ 这个文件非常重要：Docker 会先把整个目录作为「构建上下文」发送给守护进程，
+#    若不过滤，data/（8.8 GB）和 venv/（1.2 GB）会被一起发送，
+#    导致构建极慢甚至失败。它们对镜像内容没有任何用处。
+# =============================================================================
+
+# 大数据集（本地才有，镜像里不需要；应用可优雅降级）
+data/
+
+# 本地虚拟环境（镜像里由 pip 重新安装）
+venv/
+.venv/
+
+# 版本控制与编辑器
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# 缓存与临时产物
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.so
+.tmp/
+.pytest_tmp/
+.pytest_cache/
+*.log
+
+# 开发过程产物（含场景备份 JSON，合计约 3.5 MB）
+exports/
+*.bak
+*.bak_*
+*.backup
+
+# 本地凭据 —— 绝不能进镜像！容器启动时由 docker-entrypoint.sh
+# 从环境变量（HF Spaces 的 Secrets）动态生成。
+.streamlit/secrets.toml
+.env
+.env.*
+
+# 本地 SQLite 缓存
+*.db
+*.sqlite
+*.sqlite3
+
+# 可选依赖清单（torch 相关，镜像不装）
+requirements-lstm.txt
+
+# Docker 自身文件
+Dockerfile
+.dockerignore
+
+# 文档（不参与运行）
+DEPLOY.md
+*.spec

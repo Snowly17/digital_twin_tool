@@ -38,15 +38,47 @@
 enableStaticServing = true
 ```
 
-**它决定了 `/app/static/models/*.glb` 能不能被访问**。3D 场景的 26 个模型全靠这条。
-一旦它没提交上去，线上会是这样：场景能打开，但**所有物体变成灰色方块**（走程序化兜底），
-而且控制台只会报 404，不报配置错误。
+**它决定了 `/app/static/*`（three.js、26 个 GLB、思索运行时）能不能被访问。**
 
 本仓库原本的 `.gitignore` 里写的是 `/.streamlit/`，把 `config.toml` 一起忽略了——
 已修正为只忽略 `**/secrets.toml`。
 
 > 官方也要求：Community Cloud 只识别**仓库根目录**下的 `.streamlit/config.toml`
 > （见 [Status and limitations](https://docs.streamlit.io/deploy/streamlit-community-cloud/status#repository-file-structure)）。
+
+#### ⚠️ 但更要紧的是：这个选项在 Streamlit Cloud 上不生效
+
+**实测结论（2026-09）**：即使 `config.toml` 正确提交、位置也合规，
+**Streamlit Community Cloud 仍然不支持 `server.enableStaticServing`**。
+请求 `/app/static/*` 会落到 SPA 兜底路由、返回 `index.html`（`text/html`），
+于是浏览器按 MIME 检查全部拒绝：
+
+```
+/app/static/vendor/three/three.module.js
+  Failed to load module script: Expected a JavaScript-or-Wasm module script
+  but the server responded with a MIME type of "text/html"
+```
+
+连带后果：three.js 全部 8 个模块加载失败 → module script 不执行 →
+**3D 场景全空、加载遮罩永久卡在 0%**；`ponder.js` / `ponder.css` /
+`supabase-js` / 26 个 GLB 同样失效。**思索按钮也不会出现。**
+
+这不是仓库配置问题，改代码解决不了。同类报告：
+[静态文件服务不工作](https://discuss.streamlit.io/t/static-file-serving-not-working-also-not-the-example-from-the-documentation/73525)、
+[`<img src="app/static/...>` 不工作](https://discuss.streamlit.io/t/img-src-app-static-does-not-work/119356)。
+
+**解决办法：改用能自己控制服务器的平台**。本仓库已备好两套配置：
+
+| 平台 | 文档 | 特点 |
+|---|---|---|
+| **Railway**（推荐） | **[DEPLOY-RAILWAY.md](DEPLOY-RAILWAY.md)** | 不休眠、响应快、按用量计费（有试用额度） |
+| Hugging Face Spaces | [DEPLOY-HF.md](DEPLOY-HF.md) | 有免费层，但会休眠；主站在国内访问受限 |
+
+两者用的是**同一套 Docker 文件**（`Dockerfile` + `docker-entrypoint.sh`），
+区别只在端口：Railway 用平台分配的 `$PORT`，HF Spaces 用 7860，
+入口脚本已同时兼容。**应用代码一行都不用改。**
+
+如果你只需要界面和思索文字部分、不在乎 3D 场景，继续用 Streamlit Cloud 也可以。
 
 ### 坑 ② `data/` 有 8.8 GB，不能进 Git
 
@@ -201,16 +233,47 @@ git commit -m "移除误提交的数据集与虚拟环境"
 
 ```toml
 SUPABASE_URL = "https://xxxx.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOi..."
+SUPABASE_ANON_KEY = "sb_publishable_xxxx"
+
+# 高德地图 Web 服务 key 与签名私钥（不配则跳过高德 POI 请求，功能自动降级）
+AMAP_API_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+AMAP_SECRET_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 在 Streamlit Cloud 的 Secrets 输入框里**原样粘贴这段 TOML**即可。
 
 > ⚠️ 只填 `anon` 公钥。**不要**把 `service_role` 密钥放进前端可访问的应用——
-> 它会绕过行级安全策略。仓库里没有任何硬编码密钥（已全量扫描确认）。
+> 它会绕过行级安全策略。
 
-**不配 Secrets 也能部署**：`core/supabase_client.py` 的导入有 `try/except` 保护，
-缺失时云数据库相关功能关闭（发布到公共库、Realtime 订阅），其余功能照常。
+**不配 Secrets 也能部署**，各功能独立降级：
+
+| 缺失的键 | 影响 |
+|---|---|
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | 云数据库功能关闭（发布到公共库、Realtime 订阅）；`core/supabase_client.py` 导入有 `try/except` 保护 |
+| `AMAP_API_KEY` / `AMAP_SECRET_KEY` | 高德 POI 请求跳过，`_fetch_from_amap()` 返回空表；其余站点数据功能照常 |
+
+读取逻辑统一在 `core/console.py` 的 `read_secret()`：**st.secrets → 环境变量 → 默认值**。
+
+#### 关于凭据轮换（重要）
+
+本项目曾有 **3 处真实凭据被硬编码在源码里**，已全部改为 `read_secret()` 读取：
+
+| 文件 | 原硬编码内容 |
+|---|---|
+| `common/data_processor.py` | 高德 `api_key` + `secret_key`（用于请求签名） |
+| `test_supabase.py` | Supabase URL + anon key |
+| `test_supabase_connection.py` | Supabase URL + anon key |
+
+> **提交前务必确认这些值没被推上去。** 首次提交后再删文件是无效的——
+> 密钥会永久留在 Git 历史里，只能去对应平台后台轮换。
+>
+> 如果这些密钥**曾经**出现在任何已推送的仓库或公开位置，请立即轮换：
+> 高德控制台重签 key，Supabase 后台重置 anon key（并检查 RLS 策略）。
+>
+> 自检命令（提交前跑一次，应无任何"高危"命中）：
+> ```bash
+> python .tmp/scan_creds.py
+> ```
 
 ### 3.3 部署后自检清单
 
@@ -219,19 +282,27 @@ SUPABASE_ANON_KEY = "eyJhbGciOi..."
 | 检查项 | 期望结果 | 若不符 |
 |---|---|---|
 | 页面能打开 | 看到三栏驾驶舱布局 | 看 Cloud 构建日志 |
-| 3D 场景有物体 | 能看到建筑/树/充电桩模型 | 多半是坑 ①（`config.toml` 没提交），物体变成灰盒 |
-| 底部 💭 按钮存在 | 是 | 静态资源 404，检查 `static/js/ponder.js` 是否提交 |
-| 点 💭 能出课程目录 | 列出 11 门课 | 看浏览器 Console 的 `[思索]` 日志 |
+| **3D 场景有物体** | 能看到建筑/树/充电桩模型 | **在 Streamlit Cloud 上必然失败**，见坑 ①。Console 会报 MIME 错误 |
+| 底部 💭 按钮存在 | 是 | 同上，`ponder.js` 被 MIME 检查拒绝 |
+| 点 💭 能出课程目录 | 列出 11 门课 | 同上；或看 Console 的 `[思索]` 日志 |
 | 点充电桩 → 气泡 | 第一门是「🔧 拆开一台直流快充桩」 | —— |
 | 分镜墙可拖拽 | 每个分镜能拖动旋转 | 见下方"已知限制" |
 | 时间轴按钮 | 隐藏（因为 `data/` 未提交） | 这是预期行为 |
 
-浏览器 Console 里 `[思索] 运行时就绪 · 课件 11 个` 这行出现，说明教学引擎正常。
+> ⚠️ **在 Streamlit Community Cloud 上，前四项中的 3D 场景和 💭 按钮一定不会出现**，
+> 原因见坑 ① —— 该平台不支持静态文件服务。要完整功能请用
+> **[DEPLOY-HF.md](DEPLOY-HF.md)** 的 Hugging Face Spaces 方案。
 
-### 3.4 已知限制（线上与本地不同）
+### 3.4 已知限制（Streamlit Cloud）
 
+- **静态资源全部不可用** —— three.js / 26 个 GLB / `ponder.js` / `ponder.css` / `supabase-js`。
+  这是平台限制，**无法通过改仓库修复**。直接后果：
+  - 3D 场景全空
+  - 加载遮罩「⏳ 加载模型中… 0%」永久卡住
+  - 💭 思索按钮不出现
 - **时间轴回放不可用** —— 依赖 73 MB 的 `station_occupancy_1h.csv`
 - **站点真实数据不可用** —— 依赖 `data/`，自动降级为模拟数据
+- **LSTM 预测不可用** —— `requirements.txt` 刻意移除了 torch，降级为模拟数据
 - **MQTT 闭环控制需要外部 Broker** —— 需自行运行 `python mock_mqtt_publisher.py`
   （它是独立脚本，可以跑在你自己的机器上，指向公共 Broker `broker.emqx.io`）
 - **Community Cloud 会覆盖部分 config.toml 设置** ——
@@ -322,12 +393,13 @@ python tools/make_charger_glb.py
 
 | 症状 | 最可能的原因 |
 |---|---|
-| 线上物体全是灰盒子 | `config.toml` 没提交（坑 ①） |
+| **3D 场景全空 + 遮罩卡在「加载模型中… 0%」** | **Streamlit Cloud 不支持静态文件服务**（坑 ①）。Console 会报 MIME 为 `text/html`。改用 [DEPLOY-HF.md](DEPLOY-HF.md) |
+| 💭 思索按钮不出现 | 同上一行，`ponder.js` 被 MIME 检查拒绝 |
+| Console 报 `MIME type ('text/html') is not executable` | 同上一行。请求落到了 SPA 兜底路由 |
 | 构建超时 / 内存不足 | `requirements.txt` 里还在装 torch（坑 ③） |
 | `push` 被拒绝，提示文件过大 | `data/` 没排除（坑 ②） |
 | 启动报 `UnicodeEncodeError: 'gbk' codec` | 非 UTF-8 控制台 + emoji print（坑 ④），已修 |
 | `ModuleNotFoundError: No module named 'torch'` | `_get_predictor()` 的兜底被改坏了（坑 ③），应返回 `None` 而非抛出 |
-| 思索按钮点了没反应 | 静态资源 404，或浏览器缓存了旧 `ponder.js`（URL 带 `?v=` 会自动击穿缓存） |
 | 时间轴按钮不见了 | `data/` 未提供，属预期降级 |
-| `st.secrets` 报找不到键 | Cloud 的 Secrets 没填，或键名拼写不一致 |
-| 模型加载 404 | 检查 `static/models/` 是否完整提交（应为 26 个 `.glb`） |
+| `st.secrets` 报找不到键 | Secrets 没填，或键名拼写不一致 |
+| 改完代码线上没变化 | 浏览器缓存了旧 `ponder.js`（URL 带 `?v=` 会自动击穿缓存），或该文件本身就没加载成功 |
