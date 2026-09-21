@@ -133,7 +133,17 @@ app.py                    单页应用主体（约 11.6k 行）
 
 ## 验证工具
 
-项目自带四个不依赖浏览器的验证/生成脚本：
+项目自带多个不依赖浏览器的检查/生成脚本，都在 `tools/` 下。
+
+### 提交公开仓库前
+
+```bash
+# 凭据泄露扫描：应无「高危」命中
+# （mock_data/ 里的 postgres / root:123456 是本地一次性容器的故意默认值，可忽略）
+python tools/scan_creds.py
+```
+
+### 改完代码后回归
 
 ```bash
 # 1) 课件数据自检（资产存在性、零件引用、连线端点、id 唯一性…）
@@ -143,13 +153,34 @@ python -c "from core.ponder_library import get_diagnostics as g; print(g()['prob
 python tools/export_payload.py
 
 # 3) 逐帧验证 11 门课件（真实 three.js + DOM 桩，含交互断言）
+#    会输出每门课的节点/分镜/动作/对照/相机比例，以及拖拽/缩放是否生效
 node tools/verify_ponder.cjs .tmp/ponder_payload.json
-
-# 4) 量取任意 GLB 的包围盒（排装置布局用）
-python tools/inspect_glb.py
 ```
 
-第 3 项会输出每门课的节点/分镜/动作/对照/相机比例，以及拖拽旋转与滚轮缩放是否生效。
+### 防「静默失效」的两项静态检查
+
+这两类问题的共同点是**不报错、不告警**，只有人工对比代码才能发现：
+
+```bash
+# widget key 与 session_state 赋值键同名
+# 案例：st.button(key="auto_tour") 里又写 st.session_state.auto_tour = True
+#       -> 点击即抛 StreamlitWidgetAlreadyInstantiatedError
+python tools/scan_widget_key_conflict.py
+
+# 故事定义的高亮类型在前端没有实现分支
+# 案例：故事用 highlight_type="low_util"，而 JS 里只实现了 "low_load"
+#       -> 点该故事只有相机变化、高亮完全失效
+python tools/verify_story_highlight.py
+```
+
+两个脚本都以退出码表示结果（0 = 干净，1 = 有问题），可直接接进 CI。
+
+### 其它
+
+```bash
+# 量取任意 GLB 的包围盒（排装置布局用）
+python tools/inspect_glb.py
+```
 
 ### 重新生成充电桩模型
 

@@ -121,6 +121,62 @@ def get_scene_objects(scene_id: str) -> List[Dict]:
         return []
 
 
+def ensure_scene_exists(scene_id: str, name: str = None) -> bool:
+    """
+    确保 scenes 表里存在指定 id 的父记录，不存在则创建。
+
+    为什么需要它（踩过的坑）：
+        scene_objects.scene_id 上有外键约束指向 scenes(id)。
+        「示例小镇」为了不污染公共场景市场，**故意只存在于当前会话**，
+        用的是本地随机 UUID（见 core/demo_town.py）——库里没有对应的父行。
+        于是点「发布到公共库」时：
+            sync_scene_objects() 先 DELETE 再 INSERT scene_objects
+            -> 违反外键 scene_objects_scene_id_fkey
+            -> 'Key is not present in table "scenes"'
+        而 publish_scene() 是 UPDATE，找不到行就返回空 -> 界面显示「发布失败」。
+
+    注意：不能用 get_or_create_scene() 代替 —— 传一个不存在的 id 时，
+        它会另取「最新场景」或**不带 id** 新建，返回的并不是我们要的那一行。
+
+    返回 True 表示该 id 的父记录确实存在（原本就有，或本次创建成功）。
+    """
+    import uuid as _uuid
+    try:
+        supabase = get_supabase_client()
+
+        resp = supabase.table("scenes").select("id").eq("id", scene_id).limit(1).execute()
+        if resp.data:
+            return True
+
+        payload = {
+            "id": scene_id,
+            "name": name or "未命名场景",
+            "is_public": False,
+            "author": "匿名",
+            "description": "",
+        }
+        try:
+            created = supabase.table("scenes").insert(payload).execute()
+            if created.data:
+                print(f"ℹ️ 已为本地场景补建父记录: {scene_id[:8]}...")
+                return True
+        except Exception as e:
+            # 可能是并发下已存在（主键冲突），或 RLS 拒绝；下面统一复查
+            print(f"ℹ️ 补建 scenes 记录未成功（将复查）: {e}")
+
+        # insert 没返回数据（RLS 静默拒绝等）时，回查一次确认是否真的存在
+        again = supabase.table("scenes").select("id").eq("id", scene_id).limit(1).execute()
+        if again.data:
+            return True
+
+        print(f"⚠️ 无法确保场景 {scene_id[:8]}... 存在，"
+              f"请检查 Supabase 的 scenes 表 RLS 是否允许 INSERT")
+        return False
+    except Exception as e:
+        print(f"⚠️ ensure_scene_exists 失败: {e}")
+        return False
+
+
 def sync_scene_objects(scene_id: str, objects: List[Dict]) -> bool:
     """
     同步场景物体到 Supabase
@@ -128,6 +184,12 @@ def sync_scene_objects(scene_id: str, objects: List[Dict]) -> bool:
     """
     try:
         supabase = get_supabase_client()
+
+        # 🔥 写子记录前必须先确保父场景存在，否则 scene_objects.scene_id 的
+        #    外键会直接报 23503（「示例小镇」就是这种情况，它是本地随机 UUID）。
+        if not ensure_scene_exists(scene_id):
+            print(f"❌ 跳过同步：场景 {scene_id[:8]}... 在库中不存在且无法创建")
+            return False
 
         # 🔥 只允许这些字段（严格对应你的表结构）
         ALLOWED_FIELDS = {

@@ -64,6 +64,7 @@ try:
         get_or_create_scene,
         get_scene_objects,
         sync_scene_objects,
+        ensure_scene_exists,
         update_camera_state,
         get_all_station_data,
         update_station_data,
@@ -85,6 +86,7 @@ except (ImportError, ModuleNotFoundError) as e:
     def get_or_create_scene(*args, **kwargs): return None
     def get_scene_objects(*args, **kwargs): return []
     def sync_scene_objects(*args, **kwargs): return False
+    def ensure_scene_exists(*args, **kwargs): return False
     def update_camera_state(*args, **kwargs): pass
     def get_all_station_data(*args, **kwargs): return {}
     def update_station_data(*args, **kwargs): return False
@@ -2134,7 +2136,11 @@ def render_style_panel(keyword=''):
 # ==================== 面板5：故事 ====================
 
 def render_story_panel(keyword=''):
-    """故事面板：一键切换场景视角 + 自动导览"""
+    """故事面板：一键切换场景视角（纯相机预设）+ 自动导览
+
+    注意：当前只保留纯视角类故事，不做物体高亮 —— 原因见
+    core/story_manager.py 里 _build_stories 的说明。
+    """
     story_mgr = get_story_manager()
     stories = story_mgr.get_story_list()
     current_story_id = st.session_state.get('current_story', None)
@@ -2165,7 +2171,7 @@ def render_story_panel(keyword=''):
             st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
 
     if not stories:
-        empty_state("🔍", "未找到匹配的故事", "试试搜索「全貌」或「高峰」")
+        empty_state("🔍", "未找到匹配的故事", "试试搜索「全貌」或「夜间」")
         return
 
     # ===== 故事列表 =====
@@ -2194,7 +2200,12 @@ def render_story_panel(keyword=''):
     # ===== 自动导览 =====
     st.markdown("**🎥 自动导览**")
     st.caption("按顺序播放所有故事，适合演示")
-    if st.button("▶️ 开始自动导览", key="auto_tour", use_container_width=True):
+    # 🔥 修复（StreamlitWidgetAlreadyInstantiatedError）：
+    #   按钮的 key 原先也叫 "auto_tour"，而点击处理里又写
+    #   st.session_state.auto_tour = True —— 等于在按钮这个 widget 实例化之后
+    #   修改它自己的 key，Streamlit 直接抛错，整个左侧面板报红。
+    #   widget 的 key 与状态变量必须是两个不同的名字。
+    if st.button("▶️ 开始自动导览", key="auto_tour_start_btn", use_container_width=True):
         st.session_state.auto_tour = True
         st.session_state.auto_tour_index = 0
         if stories:
@@ -2317,8 +2328,17 @@ def render_scene_library_panel(keyword=''):
                         with col_f1:
                             if st.form_submit_button("✅ 确认发布", use_container_width=True, type="primary"):
                                 tags_list = [t.strip() for t in tags_input.split(',') if t.strip()]
-                                sync_scene_objects(scene_id, st.session_state.scene_objects)
-                                if publish_scene(scene_id, author, desc, tags_list):
+                                # 🔥 关键：先确保 scenes 表里有这个场景的父记录。
+                                #    「示例小镇」这类本地场景用的是本地随机 UUID，
+                                #    库里没有父行，直接写 scene_objects 会外键失败，
+                                #    publish_scene（UPDATE）也找不到行 -> 显示「发布失败」。
+                                _scene_name = getattr(st.session_state.current_scene, 'scene_name', None) \
+                                    if st.session_state.get('current_scene') else None
+                                if not ensure_scene_exists(scene_id, _scene_name):
+                                    st.error("❌ 无法在云端创建此场景（请检查 Supabase 的 scenes 表权限）")
+                                elif not sync_scene_objects(scene_id, st.session_state.scene_objects):
+                                    st.error("❌ 场景物体同步失败，未发布")
+                                elif publish_scene(scene_id, author, desc, tags_list):
                                     st.toast("🌐 已发布到公共场景库", icon="🌐")
                                     st.session_state['_show_publish_form'] = False
                                     st.rerun()
@@ -4213,22 +4233,57 @@ def render_right_panel():
             current_selected = st.session_state.selected_object_id
             options_list = list(obj_options.keys())
 
-            if 'object_selectbox' not in st.session_state:
-                st.session_state['object_selectbox'] = current_selected
-            elif st.session_state['object_selectbox'] != current_selected:
-                st.session_state['object_selectbox'] = current_selected
+            # ── 双向同步 ────────────────────────────────────────────────
+            # selected_object_id 是「唯一真值」，可能被多处改动：
+            #   · 左侧资产树的 🎯 按钮
+            #   · 3D 场景里点击物体（前端回写）
+            #   · 「关联对象」的跳转按钮
+            #   · 下方新建物体后自动选中
+            # 所以每次 rerun 都要把真值刷进 selectbox 的 widget 状态，
+            # 否则下拉框会一直显示旧物体。
+            #
+            # ⚠️ 这里曾经有个反向覆盖的 bug（已修）：
+            #      elif st.session_state['object_selectbox'] != current_selected:
+            #          st.session_state['object_selectbox'] = current_selected
+            #    这段在「用户刚改完」的时刻无条件用旧值覆盖用户的新选择，
+            #    而紧随其后的 selectbox 又把这个值当初始值渲染 ——
+            #    于是下拉框永远弹回原选项，表现为「选了就回弹、选不中」。
+            #    左侧资产树没有 selectbox 与它对抗，所以一直是正常的。
+            #
+            # 现在改为：selectbox 的改动由 on_change 回调负责（见下方
+            # _on_object_pick），这里只做「外部改动 -> widget」的单向刷新。
+            if options_list:
+                _widget_val = st.session_state.get('object_selectbox')
+                if current_selected in options_list:
+                    # 真值合法：以它为准刷新 widget。
+                    # 若 widget 里是用户刚选的新值（同样合法），也一并对齐到真值 ——
+                    # 因为回调 _on_object_pick 会立刻把真值更新成用户的选择，
+                    # 二者最终一致，不会吞掉用户输入。
+                    if _widget_val != current_selected:
+                        st.session_state['object_selectbox'] = current_selected
+                else:
+                    # 真值不合法（未选中 / 物体被删）：让 widget 落到一个合法选项，
+                    # 绝不要把 None 或失效 id 写进 widget（那会触发 selectbox 报错）
+                    if _widget_val not in options_list:
+                        st.session_state['object_selectbox'] = options_list[0]
 
-            if st.session_state['object_selectbox'] not in options_list:
-                st.session_state['object_selectbox'] = options_list[0] if options_list else None
+            def _on_object_pick():
+                """用户在下拉框里选了物体：写回真值并整页重跑。"""
+                picked = st.session_state.get('object_selectbox')
+                if picked != st.session_state.selected_object_id:
+                    st.session_state.selected_object_id = picked
+                    st.rerun()
 
             selected = st.selectbox(
                 "📋 选择物体",
                 options=options_list,
                 format_func=lambda x: obj_options.get(x, x),
-                key="object_selectbox"
+                key="object_selectbox",
+                on_change=_on_object_pick
             )
 
-            if selected != current_selected:
+            # 兜底：若回调因选项变化等原因未生效，这里仍保证真值同步
+            if selected != st.session_state.selected_object_id:
                 st.session_state.selected_object_id = selected
                 st.rerun()
 
@@ -4557,6 +4612,7 @@ def render_right_panel():
                         btn_label = f"{item['name']} ({item['utilization']:.0%}) 距离 {item['distance']:.1f}"
                         if st.button(btn_label, key=f"nearby_{item['id']}", use_container_width=True):
                             st.session_state.selected_object_id = item['id']
+                            st.session_state['object_selectbox'] = item['id']
                             st.rerun()
                     st.caption("点击按钮可切换选中")
                 else:
@@ -4836,6 +4892,7 @@ def render_right_panel():
                 if st.session_state.current_scene:
                     st.session_state.current_scene.objects = st.session_state.scene_objects
                 st.session_state.selected_object_id = new_obj['id']
+                st.session_state['object_selectbox'] = new_obj['id']
                 st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
@@ -9622,7 +9679,7 @@ def generate_scene_html():
             // ---------- 地面 ----------
             const gridColor1 = style.grid_color ? new THREE.Color(style.grid_color) : new THREE.Color(0x6699cc);
             const gridColor2 = style.grid_color ? new THREE.Color(style.grid_color).multiplyScalar(0.5) : new THREE.Color(0x2a4a6a);
-            const grid = new THREE.GridHelper(20, 20, gridColor1, gridColor2);
+            const grid = new THREE.GridHelper(80, 80, gridColor1, gridColor2);
             grid.position.y = -0.05;
             scene.add(grid);
 
@@ -11581,6 +11638,7 @@ def main():
                 if st.session_state.current_scene:
                     st.session_state.current_scene.objects = st.session_state.scene_objects
                 st.session_state.selected_object_id = new_obj['id']
+                st.session_state['object_selectbox'] = new_obj['id']
                 if SUPABASE_AVAILABLE and 'scene_id' in st.session_state:
                     sync_scene_objects(st.session_state.scene_id, st.session_state.scene_objects)
                 st.toast(f"✅ 已复制: {new_obj.get('name', '物体')}")
