@@ -10,6 +10,7 @@ import os
 import json
 import uuid
 import time
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
@@ -150,14 +151,34 @@ def _get_predictor():
     return get_predictor()
 
 
-_OCC_PATH = os.path.join(project_root, 'data', 'station-level', 'station_occupancy_1h.csv')
+# 🔥 数据源降级：优先完整 CSV（本地开发），缺失则用 demo 精简版（交付包）
+#    为什么：完整 CSV 72MB，塞进作品包会让评委首次启动等 5~10 秒。
+#    demo 版只有几百 KB，秒开，且时间轴效果完全一致（本来就只采样 200 步）。
+_FULL_OCC = os.path.join(project_root, 'data', 'station-level', 'station_occupancy_1h.csv')
+_DEMO_OCC = os.path.join(project_root, 'data', 'demo', 'occupancy_demo.parquet')
+_OCC_PATH = _FULL_OCC if os.path.exists(_FULL_OCC) else _DEMO_OCC
+_IS_DEMO_DATA = (_OCC_PATH == _DEMO_OCC)
+
+
+def _load_occ_df(usecols=None):
+    """按数据源类型选择读取方式。CSV 与 Parquet 的 API 不同。"""
+    if _IS_DEMO_DATA:
+        df = pd.read_parquet(_OCC_PATH, columns=usecols)
+    else:
+        df = pd.read_csv(_OCC_PATH, usecols=usecols)
+    df.index = pd.to_datetime(df.index)
+    return df
 
 
 @st.cache_data(show_spinner=False)
 def _occupancy_header():
-    """只读 CSV 表头拿站点列名（约 0.1s），避免解析 72MB 全量数据。"""
     if not os.path.exists(_OCC_PATH):
         return None
+    if _IS_DEMO_DATA:
+        # Parquet 无"只读表头"API，读全量但只有几百 KB
+        df = pd.read_parquet(_OCC_PATH)
+        return {"index_name": df.index.name or 'time',
+                "columns": [str(c) for c in df.columns]}
     head = pd.read_csv(_OCC_PATH, index_col=0, nrows=0)
     return {"index_name": head.index.name, "columns": [str(c) for c in head.columns]}
 
@@ -166,26 +187,48 @@ def _occupancy_header():
 def _build_timeline(station_cols: tuple, sample_steps: int = 200):
     """
     只读所需站点列并采样，返回轻量时间轴数据。
-    缓存的是最终小结果（约几百 KB），而不是 72MB 的原始 DataFrame。
+
+    🔥 三个类型保护，都是踩过坑之后加的：
+      1. sample_steps 强制 int —— 缓存反序列化/调用方可能传 float，
+         np.linspace(num=200.0) 在某些版本会抛
+         "can't multiply sequence by non-int of type 'float'"
+      2. keep 过滤 None —— CSV 索引列没名字时 info["index_name"] 是 None，
+         塞进 usecols 会让 pandas 内部出错
+      3. matrix 用 np.asarray + np.round 而不是 .values.round() ——
+         dtype 是 object 时后者会走 Python 分支，对字符串元素调用
+         round() 就报同样的错
     """
+    sample_steps = int(sample_steps)
+
     info = _occupancy_header()
     if not info:
         return None
-    keep = [info["index_name"]] + [c for c in station_cols if c in set(info["columns"])]
+
+    idx_name = info.get("index_name") or "time"   # 🔥 None 兜底
+    keep = [idx_name] + [c for c in station_cols if c in set(info["columns"])]
+    keep = [k for k in keep if k is not None]     # 🔥 过滤 None
+
     occ_df = pd.read_csv(_OCC_PATH, index_col=0, usecols=keep)
     occ_df.index = pd.to_datetime(occ_df.index)
-    total = len(occ_df)
+    total = int(len(occ_df))                       # 🔥 强制 int
     if total == 0:
         return None
+
     if total > sample_steps:
         idx = np.linspace(0, total - 1, sample_steps, dtype=int)
     else:
         idx = list(range(total))
+
     sampled = occ_df.iloc[idx]
+
+    # 🔥 强制转 float32 再 round，绕开 object dtype 的坑
+    matrix = np.asarray(sampled.values, dtype=np.float32)
+    matrix = np.round(matrix, 3).tolist()
+
     return {
         "timeline": [t.strftime('%m-%d %H:%M') for t in sampled.index],
         "stationIds": [str(c) for c in sampled.columns],
-        "matrix": sampled.values.round(3).tolist(),
+        "matrix": matrix,
         "maxSteps": len(sampled),
     }
 
@@ -214,13 +257,13 @@ st.markdown("""
         height: fit-content;
     }
     .panel-title {
-        color: #88aadd;
+        color: var(--color-text-3);
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         margin-bottom: 0.5rem;
         font-weight: 600;
-        border-bottom: 1px solid #1a2a44;
+        border-bottom: 1px solid var(--color-border);
         padding-bottom: 0.4rem;
     }
 
@@ -454,8 +497,8 @@ st.markdown("""
     
     /* panel-title 发光文字 */
     .panel-title {
-        color: #88ccff !important;
-        text-shadow: 0 0 20px rgba(74, 144, 217, 0.1) !important;
+        color: var(--color-accent) !important;
+        text-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.1) !important;
         letter-spacing: 0.08em !important;
     }
     
@@ -618,6 +661,49 @@ if 'last_update' not in st.session_state:
 if 'binding_station_id' not in st.session_state:
     st.session_state.binding_station_id = None
 
+# ============================================================
+# 🔥 统一补齐「可空」的 session_state 键
+#
+#    为什么必须在这里集中初始化：
+#      `st.session_state.foo` 在 foo 不存在时抛 **AttributeError**，
+#      而 `st.session_state.get('foo')` 返回 None。
+#      项目里大量使用属性访问（如 st.session_state.scene_id），
+#      一旦某个键因故没被赋过值，就会在用户点击时才崩。
+#
+#    踩过的真实 bug：
+#        预览失败：st.session_state has no attribute "scene_id"
+#      根因是 scene_id 只在 init_db_scene() 里赋值，而它在
+#      _db_initialized=True 时会提前 return —— 清空/导入场景后重启，
+#      scene_id 从未被设置过，点「预览」即崩。
+#
+#    ⚠️⚠️ 血的教训：**占位值必须是该键的"正确类型"** ⚠️⚠️
+#      我第一版给 gen_rules 填了 None，结果骗过了下游的
+#      `if 'gen_rules' not in st.session_state:` 判断
+#      （键已存在 → 跳过初始化 → 永远是 None），
+#      而消费方当它是字典调用 .setdefault()，直接崩：
+#          AttributeError: 'NoneType' object has no attribute 'setdefault'
+#      所以：**不要为了"消除 AttributeError"而填错误类型的占位值**，
+#      要么填正确类型的空值，要么让消费方自己初始化。
+# ============================================================
+_SESSION_DEFAULTS = {
+    'scene_id': None,              # 字符串或 None —— 消费方都用 .get/in 判断
+    'active_panel': 'scene',
+    # 撤销/重做栈：消费方会直接 append，必须是 list
+    'operation_history': [],
+    # ⚠️ 故意**不**给 gen_rules 设默认值：
+    #    它由 _init_rules_if_needed() 初始化为结构化字典。
+    #    在这里填 None 会破坏那个初始化（见上面的教训）。
+    'onboarding_step': 0,
+    'whatif_active': False,
+    'big_screen_mode': False,
+    'export_html_content': None,   # 字符串或 None
+    'current_style': 'tech_blue',
+    'current_story': None,
+}
+for _k, _v in _SESSION_DEFAULTS.items():
+    if _k not in st.session_state:
+        st.session_state[_k] = _v
+
 component_lib = get_component_library()
 
 
@@ -682,7 +768,12 @@ def init_db_scene():
                     )
                     st.session_state.current_scene = scene_data
                     st.session_state.scene_objects = objects
-                    st.session_state.scene_objects = build_relations(st.session_state.scene_objects)
+                    # 🔥 关系分析是 O(n²) 的，城市场景下会导致服务端卡死
+                    #    （实测 6930 实体约 24 亿次距离运算）。build_relations 内部
+                    #    默认 max_objects=300 会跳过，这里显式传参，防止默认值被误改。
+                    st.session_state.scene_objects = build_relations(
+                        st.session_state.scene_objects, max_objects=300
+                    )
                     st.session_state.current_scene.objects = st.session_state.scene_objects
                 else:
                     # 🔥 场景存在但无物体：保持为空场景（空白网格）
@@ -1042,7 +1133,20 @@ OP_LABELS = {
 
 
 def _init_rules_if_needed():
-    if 'gen_rules' not in st.session_state:
+    """确保 gen_rules 是一个**结构完整的字典**。
+
+    ⚠️ 踩过的坑：这里原来的判断是 `if 'gen_rules' not in st.session_state`，
+       只检查「键是否存在」。后来在 Session State 默认值里加了
+       `'gen_rules': None` 作为占位，于是键存在、值为 None，
+       这个判断直接跳过 —— gen_rules 永远是 None，
+       而 render_rule_editor 当它是字典调用 .setdefault()，
+       报 `AttributeError: 'NoneType' object has no attribute 'setdefault'`。
+
+       教训：**占位默认值必须是正确类型**，否则会骗过下游的
+       "键不存在才初始化" 逻辑。这里改成检查值本身是否可用。
+    """
+    rules = st.session_state.get('gen_rules')
+    if not isinstance(rules, dict):
         st.session_state.gen_rules = {
             'point':   {'target': 'charger_fast',  'conditions': []},
             'line':    {'target': 'road_straight', 'conditions': []},
@@ -1653,15 +1757,36 @@ def render_asset_tree_panel(keyword=''):
         else:
             avg_str = ""
 
-        # 🔥 关键：给 expander 加 key，让它记住用户的展开/收起状态
-        # key 用分类名（去掉特殊字符）保证稳定
-        expander_key = "tree_exp_v2_" + cat.replace(' ', '_').replace('·', '').strip()
+        # 🔥 性能关键：st.expander 默认**即使收起也会执行全部内容**。
+        #    原来这里对 6930 个物体逐个 st.columns + st.button，等于每次 rerun
+        #    都要建约 7000 个 column 和 7000 个 button —— 导入大场景后
+        #    「切换面板」要等很久，根因就在这里。
+        #
+        #    官方解法：on_change="rerun" 让 expander 变成**动态**的，
+        #    此时 .open 会返回 True/False（默认模式下是 None，无法判断），
+        #    于是可以只在展开时才渲染内容。
+        #
+        #    另外加一层「每类最多渲染 MAX_TREE_ITEMS 个」：
+        #    即使展开一个上万物体的分类也不会把页面卡死，
+        #    配合搜索框可以精确定位到具体物体。
+        MAX_TREE_ITEMS = 100
+        expander_key = "tree_exp_v3_" + cat.replace(' ', '_').replace('·', '').strip()
+        _exp = st.expander(f"{cat} ({len(objs)}{avg_str})",
+                           expanded=False,
+                           on_change="rerun",
+                           key=expander_key)
 
-        with st.expander(f"{cat} ({len(objs)}{avg_str})",
-                         expanded=False,
-                         key=expander_key):
+        if not _exp.open:
+            # 收起状态：不渲染任何条目（这是省下几千个元素的关键）
+            continue
 
-            for obj in objs:
+        with _exp:
+            _shown = objs[:MAX_TREE_ITEMS]
+            if len(objs) > MAX_TREE_ITEMS:
+                st.caption(f"⚠️ 该类共 {len(objs)} 个，仅显示前 {MAX_TREE_ITEMS} 个"
+                           f"（用上方搜索框精确定位）")
+
+            for obj in _shown:
                 obj_id = obj.get('id', '')
                 obj_name = obj.get('name', '未命名')
                 util = obj.get('utilization', 0)
@@ -2261,6 +2386,16 @@ def render_scene_library_panel(keyword=''):
         print(f"⚠️ 示例小镇入口渲染失败（已跳过）: {e}")
 
     # ============================================================
+    # ❌ 已移除：内置「深圳市充电站分布」入口
+    #    原因：实测从内置入口加载非常慢，而「数据面板 → 载入场景存档」
+    #          加载同样的文件很快，且用户更希望**自己拖文件**掌控加载时机。
+    #    现在加载深圳市场景的方式：数据面板 → 载入场景存档 → 拖入
+    #          static/data/shenzhen_core_scene.json（充电站）
+    #          static/data/shenzhen_layer_scene.json（路网 + 楼块，可叠加）
+    #    文件仍保留在 static/data/ 下，供手动拖入使用。
+    # ============================================================
+
+    # ============================================================
     # 🔥 预览模式顶部提示
     # ============================================================
     if st.session_state.get('_preview_original'):
@@ -2272,9 +2407,19 @@ def render_scene_library_panel(keyword=''):
                 if orig:
                     st.session_state.current_scene = orig['current_scene']
                     st.session_state.scene_objects = orig['scene_objects']
-                    st.session_state.selected_object_id = orig['selected_object_id']
-                    st.session_state.scene_id = orig['scene_id']
-                    st.session_state._db_initialized = orig['_db_initialized']
+                    st.session_state.selected_object_id = orig.get('selected_object_id')
+                    st.session_state.scene_id = orig.get('scene_id')
+                    st.session_state._db_initialized = orig.get('_db_initialized', False)
+
+                    # 🔥 恢复 URL 里的 scene_id：
+                    #    预览期间即使用了 True 阻止污染，也怕用户中途点了"加载"之类的操作
+                    #    又把 URL 改过。退出时统一按保存的值恢复，最稳。
+                    _url_sid = orig.get('url_scene_id')
+                    if _url_sid:
+                        st.query_params['scene_id'] = _url_sid
+                    elif 'scene_id' in st.query_params:
+                        del st.query_params['scene_id']
+
                     st.toast("✅ 已退出预览，返回原场景", icon="↩️")
                     st.rerun()
         with col_prev2:
@@ -2474,9 +2619,11 @@ def render_scene_library_panel(keyword=''):
                                                 st.session_state['_preview_original'] = {
                                                     'current_scene': st.session_state.current_scene,
                                                     'scene_objects': list(st.session_state.scene_objects),
-                                                    'selected_object_id': st.session_state.selected_object_id,
-                                                    'scene_id': st.session_state.scene_id,
+                                                    'selected_object_id': st.session_state.get('selected_object_id'),
+                                                    'scene_id': st.session_state.get('scene_id'),
                                                     '_db_initialized': st.session_state.get('_db_initialized', False),
+                                                    # 🔥 记录 URL 里当前的 scene_id：退出预览时用它恢复（预览期间可能被污染）
+                                                    'url_scene_id': st.query_params.get('scene_id', None),
                                                 }
                                                 preview_scene = SceneData(
                                                     scene_name=f"[预览] {scene_resp.data[0]['name']}",
@@ -2486,7 +2633,11 @@ def render_scene_library_panel(keyword=''):
                                                 st.session_state.scene_objects = objs
                                                 st.session_state.selected_object_id = None
                                                 st.session_state.scene_id = sid
-                                                st.session_state._db_initialized = False
+                                                # 🔥 关键：设 True 而不是 False。
+                                                #    设 False 会导致下次 rerun 触发 init_db_scene → 它会把预览 sid 写进 URL
+                                                #    → 用户一刷新就又被拖回预览场景。
+                                                #    设 True 让 init_db_scene 直接 return，URL 保持原样。
+                                                st.session_state._db_initialized = True
                                                 st.toast("👁️ 已加载预览，从上方或此按钮退出", icon="👁️")
                                                 st.rerun()
                                         except Exception as e:
@@ -2826,36 +2977,94 @@ def render_data_panel(keyword=''):
 
     # --- 方式2：载入场景存档（.json） ---
     with st.expander("💾 载入场景存档（.json）", expanded=False):
-        st.caption("💡 恢复**本工具导出**的完整场景（含位置、绑定关系、场景名）")
+        st.caption("💡 恢复**本工具导出**的完整场景；可**一次选多个文件叠加**"
+                   "（如 充电站 + 城市肌理）")
 
-        uploaded = st.file_uploader(
-            "上传场景 JSON",
+        # 🔥 修复（无限刷新）：上传的文件会**一直留在 file_uploader 的
+        #    session_state 里**，若每次都重新导入再 rerun，就形成无限循环
+        #    （日志刷满「全刷新 原因: import_scene_json」）。
+        #    修法：记住已处理过的 file_id 集合，同一文件只导入一次。
+        #    （不能靠清空上传器 —— file_uploader 的 session_state 不允许赋值，
+        #      会抛 StreamlitValueAssignmentNotAllowedError。）
+        #
+        # 🔥 多文件叠加：accept_multiple_files=True，并按 file_id 增量累加。
+        #    叠加规则（用户明确要求 A 方案）：
+        #      · 新文件里**没有**的类型 -> 保留原有（叠加）
+        #      · 新文件里**有**的类型   -> 替换该类型的旧物体（避免重复点导致翻倍）
+        #    这样「充电站 + 城市肌理」两个文件放一起就是完整城市场景。
+        uploaded_files = st.file_uploader(
+            "上传场景 JSON（可多选叠加）",
             type=['json'],
             key="upload_scene",
+            accept_multiple_files=True,
             label_visibility="collapsed"
         )
-        if uploaded is not None:
-            try:
-                import json as _json
-                data = _json.loads(uploaded.read().decode('utf-8'))
-                scene_name = data.get('scene_name', '导入场景')
-                objects = data.get('objects', [])
-                if objects:
-                    scene = SceneData(
+        if uploaded_files:
+            import json as _json
+
+            _processed = set(st.session_state.get('_imported_scene_fids') or [])
+            _current_ids = set()
+            _pending = []
+            for _uf in uploaded_files:
+                _fid = getattr(_uf, 'file_id', None) or getattr(_uf, 'name', None)
+                _current_ids.add(_fid)
+                if _fid not in _processed:
+                    _pending.append((_fid, _uf))
+
+            # 用户从上传器里移除了文件 -> 允许以后再拖同一个文件时重新导入
+            st.session_state['_imported_scene_fids'] = _processed & _current_ids
+
+            if _pending:
+                merged = list(st.session_state.get('scene_objects') or [])
+                names, added_total, replaced_total = [], 0, 0
+                for _fid, _uf in _pending:
+                    try:
+                        _data = _json.loads(_uf.read().decode('utf-8'))
+                    except Exception as e:
+                        st.error(f"❌ {getattr(_uf, 'name', '?')} 解析失败：{e}")
+                        continue
+                    _objs = _data.get('objects', []) or []
+                    if not _objs:
+                        st.warning(f"⚠️ {getattr(_uf, 'name', '?')} 里没有物体，已跳过")
+                        continue
+
+                    _incoming_types = {o.get('type') for o in _objs if o.get('type')}
+                    _before = len(merged)
+                    # 叠加规则：先扣掉与新文件**同类型**的旧物体，再并入
+                    merged = [o for o in merged if o.get('type') not in _incoming_types]
+                    replaced_total += _before - len(merged)
+                    merged.extend(_objs)
+                    added_total += len(_objs)
+                    names.append(_data.get('scene_name') or getattr(_uf, 'name', '导入'))
+                    st.session_state['_imported_scene_fids'].add(_fid)
+
+                if names:
+                    # 场景名：首次导入用文件名；叠加时保留原名并标注已叠加的层
+                    base_name = st.session_state.get('_import_base_name')
+                    if not base_name:
+                        base_name = names[0]
+                        st.session_state['_import_base_name'] = base_name
+                    scene_name = base_name if len(names) == 1 else f"{base_name} + {len(names) - 1} 层"
+
+                    st.session_state.current_scene = SceneData(
                         scene_name=scene_name,
-                        objects=objects
+                        objects=merged
                     )
-                    st.session_state.current_scene = scene
-                    st.session_state.scene_objects = objects
+                    st.session_state.scene_objects = merged
                     st.session_state.selected_object_id = None
                     st.session_state.export_html_content = None
-                    st.toast(f"✅ 已导入：{scene_name}（{len(objects)} 个对象）", icon="📥")
-                    mark_dirty("import_scene_json")
+                    # 🔥 场景已被替换，标记已初始化，避免 init_db_scene 又去
+                    #    Supabase/模板拉一遍把导入的场景覆盖掉
+                    st.session_state._db_initialized = True
+                    # 场景变了 -> 让场景 HTML 缓存失效
+                    mark_scene_changed()
+
+                    _msg = f"✅ 已导入 {'、'.join(names)}：+{added_total} 个物体"
+                    if replaced_total:
+                        _msg += f"（替换同类型旧物体 {replaced_total} 个）"
+                    _msg += f"，当前共 {len(merged)} 个"
+                    st.toast(_msg, icon="📥")
                     st.rerun(scope="app")
-                else:
-                    st.warning("场景文件为空")
-            except Exception as e:
-                st.error(f"❌ 导入失败：{e}")
 
     st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
 
@@ -4205,6 +4414,11 @@ def render_onboarding_fragment():
 
 # ==================== 右侧面板 ====================
 def render_right_panel():
+    if '_pending_select' in st.session_state:
+        _pending = st.session_state.pop('_pending_select')
+        if _pending:
+            st.session_state.selected_object_id = _pending
+            st.session_state['object_selectbox'] = _pending
     with st.container():
         st.markdown('<div class="panel">', unsafe_allow_html=True)
 
@@ -4374,6 +4588,7 @@ def render_right_panel():
             if selected_station != bound_station:
                 # 1. 直接改本地 obj（不走服务端同步函数，避免其中的 st.rerun() 干扰）
                 obj['bind_station_id'] = selected_station
+                mark_scene_changed()   # 就地改了物体 -> 让 HTML 缓存失效
                 if st.session_state.current_scene:
                     for i, so in enumerate(st.session_state.current_scene.objects):
                         if so.get('id') == obj['id']:
@@ -4421,6 +4636,7 @@ def render_right_panel():
                             "prediction": pred_vals,
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
+                        mark_scene_changed()   # 就地改了物体 -> 让 HTML 缓存失效
                         if st.session_state.current_scene:
                             for i, so in enumerate(st.session_state.current_scene.objects):
                                 if so.get('id') == obj['id']:
@@ -4436,6 +4652,7 @@ def render_right_panel():
                     if st.button("🗑️ 清除模拟", key=f"clear_mock_{obj['id']}", use_container_width=True):
                         if 'custom_props' in obj and '_mock_data' in obj['custom_props']:
                             del obj['custom_props']['_mock_data']
+                            mark_scene_changed()   # 就地改了物体 -> 让 HTML 缓存失效
                             if st.session_state.current_scene:
                                 for i, so in enumerate(st.session_state.current_scene.objects):
                                     if so.get('id') == obj['id']:
@@ -4472,6 +4689,7 @@ def render_right_panel():
                 # 让左侧资产树和 3D 场景能拿到同一个值
                 if abs(obj.get('utilization', 0) - util) > 0.01:
                     obj['utilization'] = util
+                    mark_scene_changed()   # 就地改了物体 -> 让 HTML 缓存失效
                     # 同步到 current_scene
                     if st.session_state.current_scene:
                         for i, so in enumerate(st.session_state.current_scene.objects):
@@ -4611,8 +4829,8 @@ def render_right_panel():
                     for item in nearby:
                         btn_label = f"{item['name']} ({item['utilization']:.0%}) 距离 {item['distance']:.1f}"
                         if st.button(btn_label, key=f"nearby_{item['id']}", use_container_width=True):
-                            st.session_state.selected_object_id = item['id']
-                            st.session_state['object_selectbox'] = item['id']
+                            # 🔥 只写中间标记，不直接改 object_selectbox（widget 已实例化）
+                            st.session_state['_pending_select'] = item['id']
                             st.rerun()
                     st.caption("点击按钮可切换选中")
                 else:
@@ -4776,6 +4994,7 @@ def render_right_panel():
                     # 同步到3D场景
                     if st.button("✅ 应用到3D场景", key=f"whatif_apply_{obj['id']}", use_container_width=True):
                         obj['utilization'] = sim_util
+                        mark_scene_changed()   # 就地改了物体 -> 让 HTML 缓存失效
                         if st.session_state.current_scene:
                             for i, so in enumerate(st.session_state.current_scene.objects):
                                 if so.get('id') == obj['id']:
@@ -4841,8 +5060,8 @@ def render_right_panel():
                     )
                 with col_rel2:
                     if st.button("→", key=f"jump_{obj['id']}_{rel_type}_{idx}", help="跳转"):
-                        st.session_state.selected_object_id = target_id
-                        st.session_state['object_selectbox'] = target_id
+                        # 🔥 同上：改 pending，让下次 run 在函数开头统一消费
+                        st.session_state['_pending_select'] = target_id
                         st.rerun()
 
         # ===== 操作历史 =====
@@ -4891,8 +5110,8 @@ def render_right_panel():
                 st.session_state.scene_objects.append(new_obj)
                 if st.session_state.current_scene:
                     st.session_state.current_scene.objects = st.session_state.scene_objects
-                st.session_state.selected_object_id = new_obj['id']
-                st.session_state['object_selectbox'] = new_obj['id']
+                # 🔥 同上：改 pending
+                st.session_state['_pending_select'] = new_obj['id']
                 st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
@@ -5090,8 +5309,28 @@ def generate_scene_html():
             if timeline_data:
                 print(f"✅ 时间轴数据：{timeline_data['maxSteps']} 步 × {len(timeline_data['stationIds'])} 站点")
     except Exception as e:
+        import traceback
         print(f"⚠️ 时间轴加载失败: {e}")
+        traceback.print_exc()
         timeline_data = None
+
+    # ============================================================
+    # 🔥 加载离线预计算的预测数据（tools/build_predictions.py 产物）
+    #    为什么离线：单次全量推理要 11.8 秒，前端不可能实时调。
+    #    前端拿到的是一个 { station_id: 12h后预测利用率 } 的字典，
+    #    切到预测模式时一次 setColorAt 刷完。
+    # ============================================================
+    predictions = {}
+    _pred_path = os.path.join(project_root, 'data', 'demo', 'predictions.json')
+    if os.path.exists(_pred_path):
+        try:
+            with open(_pred_path, 'r', encoding='utf-8') as f:
+                predictions = json.load(f)
+            print(f"🔮 加载 {len(predictions)} 个站点的预测值")
+        except Exception as e:
+            print(f"⚠️ 预测数据加载失败: {e}")
+    else:
+        print("ℹ️ 未找到 predictions.json（预测图层不可用）")
 
     scene_data = {
         "objects": objects,
@@ -5100,6 +5339,7 @@ def generate_scene_html():
         "sceneId": scene_id,
         # P3：不再下发 alertThreshold（告警阈值唯一真值在浏览器 localStorage）
         "timeline": timeline_data,
+        "predictions": predictions,
         "lodConfig": {
             "enabled": st.session_state.get('lod_enabled', True),
             "nearDistance": 15.0,
@@ -5144,7 +5384,109 @@ def generate_scene_html():
         }
     }
 
-    scene_json = json.dumps(scene_data, ensure_ascii=False)
+    # 🔥 传输量优化：场景 JSON 占整个场景 HTML 的 87%（实测 2.47 MB / 2.85 MB），
+    #    而它**每次 rerun 都要重新传一遍**（点选、切面板、改属性全是 rerun）。
+    #    这里对「会被实例化渲染的类型」做字段紧凑化 + JSON 紧凑分隔符：
+    #      · 这些类型走 InstancedMesh，渲染只需要 位置/旋转/尺寸/颜色
+    #      · 每个物体原本 12 个字段 → 精简到 4~6 个
+    #    只对超过实例化阈值的类型生效，小场景（精细建模）保持原样不动。
+    _INST_TYPES = ("charger_fast", "charger_slow", "charger_super",
+                   "building", "building_tall", "road", "water")
+    _INST_MIN = 200
+
+    _type_counts = {}
+    for _o in scene_data.get("objects", []):
+        if not isinstance(_o, dict):
+            continue
+        _t = _o.get("type")
+        if not isinstance(_t, str):
+            continue
+        if _t in _INST_TYPES:
+            _type_counts[_t] = _type_counts.get(_t, 0) + 1
+    _bulk_types = {t for t, n in _type_counts.items() if n >= _INST_MIN}
+
+    if _bulk_types:
+        _compact = []
+        for _o in scene_data.get("objects", []):
+            if _o.get("type") not in _bulk_types:
+                _compact.append(_o)
+                continue
+            _cp = _o.get("custom_props") or {}
+            _new = {
+                "id": _o.get("id"),
+                # 🔥 补回 name：信息面板标题靠它显示。
+                #    之前为了省传输量把它删了，结果标题永远是"物体"。
+                #    1423 个桩每个 name 约 10 字符，多 ~14KB，可接受。
+                "name": _o.get("name") or "",
+                "type": _o.get("type"),
+                "position": _o.get("position"),
+                "rotation": _o.get("rotation") or {"x": 0, "y": 0, "z": 0},
+                "scale": _o.get("scale") or {"x": 1, "y": 1, "z": 1},
+                "custom_props": {"color": _cp.get("color")} if _cp.get("color") else {},
+            }
+            # 尺寸类字段（渲染必需，缺失会退化成默认尺寸）
+            for _k in ("width", "height", "depth", "length"):
+                if _cp.get(_k) is not None:
+                    _new["custom_props"][_k] = _cp[_k]
+            # 充电桩需要 bind_station_id（前端 stationToObjectMap 用它做实时数据映射）
+            # 以及 utilization（逐实例按利用率着色，缺了会让所有桩变成同一个颜色）
+            if _o.get("type", "").startswith("charger"):
+                if _o.get("bind_station_id"):
+                    _new["bind_station_id"] = _o["bind_station_id"]
+                if _o.get("utilization") is not None:
+                    _new["utilization"] = _o["utilization"]
+            _compact.append(_new)
+        scene_data["objects"] = _compact
+
+    # 🔥 几何数据外置：把 objects 单独写成一个静态文件，HTML 里只留 URL。
+    #
+    #    动机：内联时每次刷新页面都要经 WebSocket 重传约 1.9 MB。
+    #    外置后走 HTTP + ETag —— 文件没变则返回 304，**不重传内容**。
+    #
+    #    文件名带内容指纹：这样内容一变就是新 URL，浏览器/CDN 可以放心长期缓存，
+    #    也避免"改了场景但浏览器还在用旧缓存"。
+    #
+    #    写入位置 static/data/_runtime/ —— 已加入 .gitignore，不进版本库。
+    #    为避免每次 rerun 都写 584 KB，文件名已存在就跳过写入。
+    #    ⚠️ 写成 **JS**（window.__DTT_SCENE_OBJECTS__ = [...]）而不是纯 JSON：
+    #       HTML 里用经典 <script src> 加载它。因为 module script 是延迟执行
+    #       （defer）的，浏览器保证经典脚本先跑完 ——
+    #       模块里就能**同步**读到数据，不需要把相机取景/地面尺寸/光照收敛
+    #       这些顶层逻辑改成异步事后重算（那样极易引入时序 bug）。
+    #
+    #    写入位置 static/data/_runtime/ —— 已加入 .gitignore，不进版本库。
+    scene_external_url = ""
+    _objs_blob = json.dumps(scene_data.get("objects", []),
+                            ensure_ascii=False, separators=(",", ":"))
+    try:
+        _objs_hash = hashlib.md5(_objs_blob.encode("utf-8")).hexdigest()[:12]
+        _rt_dir = os.path.join(project_root, "static", "data", "_runtime")
+        os.makedirs(_rt_dir, exist_ok=True)
+        _fname = f"scene_objects_{_objs_hash}.js"
+        _fpath = os.path.join(_rt_dir, _fname)
+        if not os.path.exists(_fpath):
+            with open(_fpath, "w", encoding="utf-8") as _fh:
+                _fh.write("window.__DTT_SCENE_OBJECTS__=" + _objs_blob + ";")
+        scene_external_url = f"/app/static/data/_runtime/{_fname}"
+    except Exception as _e:
+        print(f"⚠️ 场景几何外置失败（将内联数据）: {_e}")
+        scene_external_url = ""
+
+    # 外置成功后：从下发给浏览器的 sceneData 里**去掉 objects**（约 339 KB），
+    # 改为浏览器经经典 <script src> 加载那个文件。HTML 因此从约 840 KB 降到约 500 KB。
+    #
+    # ⚠️ 只在 scene_json 序列化之前改，Python 侧的 scene_data 后续不再使用
+    #    （资产树/详情面板读的是 st.session_state.scene_objects，不是它）。
+    #
+    # 兜底：若外置失败（写盘异常），objects 会保留在 HTML 里，前端照常工作。
+    if scene_external_url:
+        scene_data["objects"] = []
+        scene_data["_objectsExternal"] = True
+    scene_external_url_json = json.dumps(scene_external_url)
+
+    # ⚠️ 必须在「去掉 objects」之后才序列化 scene_json，
+    #    否则外置白做了（HTML 里仍会带上 339 KB）。
+    scene_json = json.dumps(scene_data, ensure_ascii=False, separators=(",", ":"))
 
     comp_defs = {}
     for cid, comp in component_lib.get_all().items():
@@ -5162,8 +5504,51 @@ def generate_scene_html():
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+        
+            /* ============================================================
+               🔥 P3-1 统一色板
+               ------------------------------------------------------------
+               同时定义 hex 和 rgb 两套：
+                 · hex 用于 color / border / background
+                 · rgb 用于 rgba(xxx, 0.x) 透明度场景
+               为什么不用 rgba(var(--x), 0.x)：CSS 变量里存 hex 不能拆成 rgb 三元组，
+               必须单独存 --xxx-rgb。
+               ============================================================ */
+            :root {{
+                --color-primary:        #4a90d9;
+                --color-primary-rgb:    74, 144, 217;
+                --color-accent:         #00d4ff;
+                --color-accent-rgb:     0, 212, 255;
+                --color-success:        #51cf66;
+                --color-success-rgb:    81, 207, 102;
+                --color-warning:        #fcc419;
+                --color-warning-rgb:    252, 196, 25;
+                --color-danger:         #ff6b6b;
+                --color-danger-rgb:     255, 107, 107;
+                --color-purple:         #a569bd;
+                --color-purple-rgb:     165, 105, 189;
+                --color-purple-light:   #c8a2d8;
+                --color-gold:           #d4a72c;
+                --color-gold-rgb:       212, 167, 44;
+                /* 底层面板（P3-1 批次 2 补充） */
+                --color-bg-panel:     rgba(16, 22, 40, 0.85);
+                --color-bg-panel-rgb: 16, 22, 40;
+                --color-bg-btn:       rgba(26, 42, 68, 0.88);
+                --color-bg-btn-rgb:   26, 42, 68;
+                --color-border:       #1a2a44;
+                --color-border-rgb:   26, 42, 68;
+                /* 文字（P3-1 批次 2 补充） */
+                --color-text-1: #eef2ff;   /* 主文字 */
+                --color-text-2: #c8d6e5;   /* 次要文字 */
+                --color-text-3: #8899bb;   /* 辅助文字 */
+                --color-text-4: #667;      /* 极弱文字 */
+                /* 字体（P3-2） */
+                --font-main: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+                --font-mono: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            }}
+        
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ overflow: hidden; background: #0a0e17; font-family: 'Segoe UI', Arial, sans-serif; }}
+            body {{ overflow: hidden; background: #0a0e17; font-family: var(--font-main); }}
             #container {{ width: 100vw; height: 100vh; position: relative; }}
             #info {{
                 position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
@@ -5336,7 +5721,7 @@ def generate_scene_html():
                 font-weight: 500;
                 min-width: 38px;
                 text-align: right;
-                font-family: 'Consolas', 'Monaco', monospace;
+                font-family: var(--font-mono);
             }}
 
             /* 悬浮信息面板 */
@@ -5345,16 +5730,16 @@ def generate_scene_html():
                 top: 80px;
                 right: 20px;
                 width: 260px;
-                background: rgba(10, 14, 23, 0.92);
+                background: rgba(var(--color-bg-panel-rgb), 0.92);
                 backdrop-filter: blur(12px);
-                border: 1px solid #1a2a44;
+                border: 1px solid var(--color-border);
                 border-radius: 16px;
                 padding: 16px 20px;
-                color: #eef2ff;
+                color: var(--color-text-1);
                 font-size: 13px;
                 z-index: 50;
                 display: none;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
                 pointer-events: auto;
                 max-height: 70vh;
                 overflow-y: auto;
@@ -5370,7 +5755,7 @@ def generate_scene_html():
             #info-panel .panel-title button {{
                 background: none;
                 border: none;
-                color: #88aadd;
+                color: var(--color-accent);
                 cursor: pointer;
                 font-size: 18px;
             }}
@@ -5462,7 +5847,7 @@ def generate_scene_html():
             transform: translateY(-8px);
             transition: opacity 0.25s, transform 0.25s;
             color: #eef2ff;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: var(--font-main);
             /* 🔥 面板内容比 iframe 高时，之前会被直接裁掉且无法滚动。
                给一个随视口收缩的高度上限 + 纵向滚动，底部选项才够得着。 */
             max-height: calc(100vh - 100px);
@@ -5615,20 +6000,24 @@ def generate_scene_html():
             pointer-events: none;
         }}
         .alert-toast {{
-            background: linear-gradient(135deg, rgba(255, 68, 68, 0.95), rgba(200, 30, 30, 0.95));
-            border: 1px solid #ff4444;
+            background: linear-gradient(135deg,
+                rgba(var(--color-danger-rgb), 0.95),
+                rgba(200, 30, 30, 0.95));
+            border: 1px solid var(--color-danger);
             border-radius: 14px;
             padding: 12px 16px;
             color: #fff;
-            box-shadow: 0 8px 32px rgba(255, 68, 68, 0.5);
+            box-shadow: 0 8px 32px rgba(var(--color-danger-rgb), 0.5);
             animation: alert-slide-in 0.4s ease-out;
             pointer-events: auto;
             backdrop-filter: blur(10px);
         }}
         .alert-toast.warning {{
-            background: linear-gradient(135deg, rgba(252, 196, 25, 0.95), rgba(220, 160, 10, 0.95));
-            border-color: #fcc419;
-            box-shadow: 0 8px 32px rgba(252, 196, 25, 0.5);
+            background: linear-gradient(135deg,
+                rgba(var(--color-warning-rgb), 0.95),
+                rgba(220, 160, 10, 0.95));
+            border-color: var(--color-warning);
+            box-shadow: 0 8px 32px rgba(var(--color-warning-rgb), 0.5);
         }}
         .alert-toast .alert-title {{
             font-weight: 700;
@@ -5958,8 +6347,8 @@ def generate_scene_html():
             height: 36px;
             border-radius: 50%;
             background: rgba(10, 14, 23, 0.88);
-            border: 1px solid #4a90d9;
-            color: #4a90d9;
+            border: 1px solid var(--color-primary);
+            color: var(--color-primary);
             cursor: pointer;
             font-size: 14px;
             display: flex;
@@ -5969,9 +6358,9 @@ def generate_scene_html():
             backdrop-filter: blur(10px);
         }}
         #tour-edit-btn:hover {{
-            background: rgba(74, 144, 217, 0.3);
+            background: rgba(var(--color-primary-rgb), 0.3);
             color: #fff;
-            box-shadow: 0 0 20px rgba(74, 144, 217, 0.5);
+            box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.5);
         }}
 
         /* ============ 💭 思索入口（与导览按钮同排，编辑导览右侧） ============ */
@@ -5985,8 +6374,8 @@ def generate_scene_html():
             height: 36px;
             border-radius: 50%;
             background: rgba(10, 14, 23, 0.88);
-            border: 1px solid #c9a227;
-            color: #c9a227;
+            border: 1px solid var(--color-gold);
+            color: var(--color-gold);
             cursor: pointer;
             font-size: 15px;
             display: flex;
@@ -5997,14 +6386,14 @@ def generate_scene_html():
             padding: 0;
         }}
         #ponder-btn:hover {{
-            background: rgba(201, 162, 39, 0.28);
+            background: rgba(var(--color-gold-rgb), 0.28);
             color: #fff;
-            box-shadow: 0 0 20px rgba(201, 162, 39, 0.5);
+            box-shadow: 0 0 20px rgba(var(--color-gold-rgb), 0.5);
         }}
         #ponder-btn.active {{
-            background: rgba(201, 162, 39, 0.42);
+            background: rgba(var(--color-gold-rgb), 0.42);
             color: #fff;
-            box-shadow: 0 0 22px rgba(201, 162, 39, 0.65);
+            box-shadow: 0 0 22px rgba(var(--color-gold-rgb), 0.65);
         }}
         
         /* ============ 任务9 时间轴回放 ============ */
@@ -6018,8 +6407,8 @@ def generate_scene_html():
             height: 36px;
             border-radius: 50%;
             background: rgba(10, 14, 23, 0.88);
-            border: 1px solid #51cf66;
-            color: #51cf66;
+            border: 1px solid var(--color-success);
+            color: var(--color-success);
             cursor: pointer;
             font-size: 14px;
             display: flex;
@@ -6029,16 +6418,73 @@ def generate_scene_html():
             backdrop-filter: blur(10px);
         }}
         .timeline-open-btn:hover {{
-            background: rgba(81, 207, 102, 0.3);
+            background: rgba(var(--color-success-rgb), 0.3);
             color: #fff;
-            box-shadow: 0 0 20px rgba(81, 207, 102, 0.5);
+            box-shadow: 0 0 20px rgba(var(--color-success-rgb), 0.5);
         }}
         .timeline-open-btn.active {{
-            background: rgba(81, 207, 102, 0.5);
+            background: rgba(var(--color-success-rgb), 0.5);
             color: #fff;
             border-color: #fff;
-            box-shadow: 0 0 20px rgba(81, 207, 102, 0.7);
+            box-shadow: 0 0 20px rgba(var(--color-success-rgb), 0.7);
         }}
+        
+        /* ============ 🔮 预测图层按钮 ============ */
+        #prediction-btn {{
+            position: absolute;
+            bottom: 25px;
+            left: calc(50% - 180px);
+            transform: translateX(-50%);
+            z-index: 100;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(10, 14, 23, 0.88);
+            border: 1px solid var(--color-accent);
+            color: var(--color-accent);
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.25s;
+            backdrop-filter: blur(10px);
+        }}
+        #prediction-btn:hover {{
+            background: rgba(var(--color-accent-rgb), 0.25);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(var(--color-accent-rgb), 0.5);
+        }}
+        #prediction-btn.active {{
+            background: rgba(var(--color-accent-rgb), 0.5);
+            color: #fff;
+            border-color: #fff;
+            box-shadow: 0 0 24px rgba(var(--color-accent-rgb), 0.8);
+            animation: prediction-pulse 1.8s ease-in-out infinite;
+        }}
+        @keyframes prediction-pulse {{
+            0%, 100% {{ box-shadow: 0 0 20px rgba(var(--color-accent-rgb), 0.6); }}
+            50%      {{ box-shadow: 0 0 36px rgba(var(--color-accent-rgb), 1.0); }}
+        }}
+
+        #prediction-badge {{
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(var(--color-accent-rgb), 0.15);
+            border: 1px solid var(--color-accent);
+            color: var(--color-accent);
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 99;
+            display: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(var(--color-accent-rgb), 0.3);
+        }}
+        #prediction-badge.visible {{ display: block; }}
 
         #timeline-panel {{
             position: absolute;
@@ -6073,7 +6519,7 @@ def generate_scene_html():
         #timeline-panel .timeline-time {{
             color: #88ccff;
             font-size: 13px;
-            font-family: 'Consolas', 'Monaco', monospace;
+            font-family: var(--font-mono);
             font-weight: 600;
         }}
         #timeline-panel .timeline-close {{
@@ -6145,7 +6591,7 @@ def generate_scene_html():
         #timeline-panel .timeline-step {{
             color: #8899bb;
             font-size: 11px;
-            font-family: 'Consolas', 'Monaco', monospace;
+            font-family: var(--font-mono);
             min-width: 70px;
             text-align: right;
         }}
@@ -6204,7 +6650,7 @@ def generate_scene_html():
             font-weight: 600;
             min-width: 40px;
             text-align: right;
-            font-family: 'Consolas', monospace;
+            font-family: var(--font-mono);
         }}
         
         /* 工具箱内的操作按钮 */
@@ -6384,7 +6830,7 @@ def generate_scene_html():
             color: #88ccff;
             padding: 1px 6px;
             border-radius: 4px;
-            font-family: 'Consolas', 'Monaco', monospace;
+            font-family: var(--font-mono);
             font-size: 12px;
         }}
         
@@ -6429,8 +6875,8 @@ def generate_scene_html():
             height: 36px;
             border-radius: 50%;
             background: rgba(10, 14, 23, 0.88);
-            border: 1px solid #fcc419;
-            color: #fcc419;
+            border: 1px solid var(--color-warning);
+            color: var(--color-warning);
             cursor: pointer;
             font-size: 15px;
             display: flex;
@@ -6441,18 +6887,18 @@ def generate_scene_html():
             padding: 0;
         }}
         .voice-btn:hover {{
-            background: rgba(252, 196, 25, 0.3);
+            background: rgba(var(--color-warning-rgb), 0.3);
             color: #fff;
-            box-shadow: 0 0 20px rgba(252, 196, 25, 0.5);
+            box-shadow: 0 0 20px rgba(var(--color-warning-rgb), 0.5);
         }}
         .voice-btn.speaking {{
             animation: voice-pulse 1s ease-in-out infinite;
-            background: rgba(252, 196, 25, 0.5);
+            background: rgba(var(--color-warning-rgb), 0.5);
             color: #fff;
         }}
         @keyframes voice-pulse {{
-            0%, 100% {{ box-shadow: 0 0 20px rgba(252, 196, 25, 0.5); }}
-            50% {{ box-shadow: 0 0 40px rgba(252, 196, 25, 0.9); }}
+            0%, 100% {{ box-shadow: 0 0 20px rgba(var(--color-warning-rgb), 0.5); }}
+            50% {{ box-shadow: 0 0 40px rgba(var(--color-warning-rgb), 0.9); }}
         }}
         
         /* ============ LOD 性能监控 ============ */
@@ -6468,15 +6914,89 @@ def generate_scene_html():
             padding: 6px 12px;
             color: #88aadd;
             font-size: 11px;
-            font-family: 'Consolas', 'Monaco', monospace;
+            font-family: var(--font-mono);
             display: none;
             line-height: 1.5;
             pointer-events: none;
         }}
+        
+        /* 🔥 大屏模式：FPS 面板放大 */
+        body.big-screen #fps-monitor {{
+            top: 30px !important;
+            left: 30px !important;
+            font-size: 16px !important;
+            padding: 12px 20px !important;
+            border-radius: 14px !important;
+            border: 1px solid #4a90d9 !important;
+            background: rgba(10, 14, 23, 0.92) !important;
+            box-shadow: 0 0 30px rgba(74, 144, 217, 0.3) !important;
+        }}
+        body.big-screen #fps-monitor .fps-good {{ font-size: 18px; }}
+        body.big-screen #fps-monitor .fps-ok   {{ font-size: 18px; }}
+        body.big-screen #fps-monitor .fps-bad  {{ font-size: 18px; }}
+        
         #fps-monitor.visible {{ display: block; }}
         #fps-monitor .fps-good {{ color: #51cf66; font-weight: 700; }}
         #fps-monitor .fps-ok {{ color: #fcc419; font-weight: 700; }}
         #fps-monitor .fps-bad {{ color: #ff6b6b; font-weight: 700; }}
+        
+        /* ============ 🎬 一键演示 ============ */
+        #demo-btn {{
+            position: absolute;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            padding: 10px 28px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--color-purple), #7d3c98);
+            border: 1px solid var(--color-purple-light);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 0 30px rgba(var(--color-purple-rgb), 0.4);
+            transition: 0.25s;
+            display: none;
+        }}
+        #demo-btn.visible {{ display: flex; align-items: center; gap: 8px; }}
+        #demo-btn:hover {{ box-shadow: 0 0 50px rgba(var(--color-purple-rgb), 0.7); }}
+        #demo-btn.running {{
+            background: linear-gradient(135deg, var(--color-danger), #c0392b);
+            border-color: var(--color-danger);
+            box-shadow: 0 0 30px rgba(var(--color-danger-rgb), 0.6);
+        }}
+
+        #demo-stop-btn {{
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: rgba(var(--color-danger-rgb), 0.9);
+            border: 1px solid var(--color-danger);
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 0 30px rgba(var(--color-danger-rgb), 0.5);
+            display: none;
+        }}
+        #demo-stop-btn.visible {{ display: block; }}
+
+        #demo-progress {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, var(--color-purple), var(--color-purple-light));
+            z-index: 199;
+            transition: width 0.3s;
+            display: none;
+        }}
+        #demo-progress.visible {{ display: block; }}
             
         </style>
         <!-- 「思索」教学动画样式：独立静态文件，不塞进本 f-string（见 static/js/ponder.js 顶部说明） -->
@@ -6784,6 +7304,11 @@ def generate_scene_html():
             <!-- 6.3 阈值告警容器 -->
             <div id="alert-container"></div>
             
+            <!-- 🎬 一键演示 -->
+            <div id="demo-progress"></div>
+            <button id="demo-btn" title="一键演示全流程">▶️ 一键演示</button>
+            <button id="demo-stop-btn" title="停止演示">⏹ 停止演示</button>
+            
             <!-- 6.9 自动导览按钮 -->
             <button id="tour-btn" class="tour-btn">🎥 自动导览</button>
             <!-- 6.6 AI语音播报按钮 -->
@@ -6842,7 +7367,7 @@ def generate_scene_html():
 
             <div id="loading-overlay">
                 <div class="spinner"></div>
-                <div class="label">⏳ 加载模型中...</div>
+                <div class="label" id="loading-label">⏳ 加载模型中...</div>
                 <div class="bar-bg">
                     <div id="progress-bar" class="bar-fill"></div>
                 </div>
@@ -6863,6 +7388,10 @@ def generate_scene_html():
                 </div>
             </div>
             <button id="timeline-open-btn" class="timeline-open-btn" title="历史回放" style="display: none;">📽️</button>
+            
+            <!-- 🔮 预测图层按钮 -->
+            <button id="prediction-btn" title="预测未来 12 小时" style="display: none;">🔮</button>
+            <div id="prediction-badge">🔮 未来 12 小时预测视图</div>
             
             <!-- 6.9+ 编辑导览路径按钮 -->
             <button id="tour-edit-btn" title="编辑导览路径">✏️</button>
@@ -6902,6 +7431,16 @@ def generate_scene_html():
         }}
         </script>
 
+        <!-- 🔥 场景几何数据（外部 JS，走 HTTP + ETag 缓存）
+             为什么是经典 script 而不是 fetch：
+               module script 是延迟执行的，浏览器保证这个经典脚本先执行完，
+               所以模块里可以**同步**读到 window.__DTT_SCENE_OBJECTS__，
+               相机取景/地面尺寸/光照收敛等顶层逻辑都不用改成异步。
+             为什么外置：
+               内联时每次刷新都要经 WebSocket 重传约 339 KB；
+               外置后走 HTTP，文件没变则返回 304，不重传内容。 -->
+        <script src="{scene_external_url}"></script>
+
         <script type="module">
             import * as THREE from 'three';
             import {{ OrbitControls }} from 'three/addons/controls/OrbitControls.js';
@@ -6911,6 +7450,7 @@ def generate_scene_html():
             import {{ EffectComposer }} from 'three/addons/postprocessing/EffectComposer.js';
             import {{ RenderPass }} from 'three/addons/postprocessing/RenderPass.js';
             import {{ UnrealBloomPass }} from 'three/addons/postprocessing/UnrealBloomPass.js';
+            import {{ mergeGeometries }} from 'three/addons/utils/BufferGeometryUtils.js';
             // 🔥 supabase-js 改为本地 UMD 单文件（自包含、无 import），不再走 importmap/CDN
             const createClient = (window.supabase && window.supabase.createClient) || null;
 
@@ -7071,9 +7611,30 @@ def generate_scene_html():
 
 
             // ---------- 数据 ----------
+            // 🔥 几何数据外置（性能）：
+            //    原先 objects 直接内联在这段 HTML 里（城市场景约 339 KB），
+            //    每次刷新页面都要经 WebSocket 重传 —— 这是「重新加载很慢」的主因。
+            //    现在它由 HTML 里的一个经典 <script src> 加载到
+            //    window.__DTT_SCENE_OBJECTS__（走 HTTP + ETag：文件没变返回 304，
+            //    不重传内容）。
+            //
+            //    ⚠️ 这里能**同步**读到它，是因为 module script 是延迟执行的：
+            //       浏览器保证前面的经典 <script src> 已执行完。
+            //       所以相机取景/地面尺寸/光照收敛等顶层逻辑都不用改成异步，
+            //       避免那一大堆时序 bug。
+            //
+            //    兜底：外置失败时 objects 仍内联在 sceneData 里。
             const sceneData = {scene_json};
+            const objects = (typeof window !== 'undefined' && window.__DTT_SCENE_OBJECTS__)
+                || sceneData.objects || [];
+            if (objects.length && window.__DTT_SCENE_OBJECTS__) {{
+                console.log('📥 几何来自静态文件: ' + objects.length + ' 个物体' +
+                            '（走 HTTP 缓存，刷新不重传）');
+            }} else if (!objects.length) {{
+                console.warn('⚠️ 未取到任何几何数据（静态文件与内联都为空）');
+            }}
+
             const compDefs = {comp_defs_json};
-            const objects = sceneData.objects || [];
             const selectedId = sceneData.selectedId || '';
             const hasSupabase = sceneData.hasSupabase || false;
             const sceneId = {scene_id_escaped};
@@ -7314,10 +7875,49 @@ def generate_scene_html():
 
             const style = sceneData.style || {{}};
 
-            // 🔥 渐变天空盒（ShaderMaterial，无需外部资源）
-            const skyTopColor = new THREE.Color(style.scene_bg || 0x0a1a3a);   // 顶部：深蓝
-            const skyBottomColor = new THREE.Color(0x1a2a4a);                   // 底部：略亮的蓝
-            const skyGeo = new THREE.SphereGeometry(500, 32, 15);
+            // 雾效保留
+            const fogColor = style.fog_color || 0x0a0e17;
+            // 🔥 场景尺度自适应：相机/雾/裁剪面原先都是按「几十个单位的小场景」
+            //    硬编码的（far=200、maxDistance=50、雾 30~70）。导入深圳市场景
+            //    （跨度 726×454）后，城市绝大部分落在远裁剪面之外、相机又拉不远，
+            //    画面表现为大片空白。这里先按所有物体算包围半径，再据此设参数。
+            let _sMinX = Infinity, _sMaxX = -Infinity, _sMinZ = Infinity, _sMaxZ = -Infinity;
+            for (const o of objects) {{
+                const p = o.position || {{}};
+                const px = p.x || 0, pz = p.z || 0;
+                if (px < _sMinX) _sMinX = px;
+                if (px > _sMaxX) _sMaxX = px;
+                if (pz < _sMinZ) _sMinZ = pz;
+                if (pz > _sMaxZ) _sMaxZ = pz;
+            }}
+            const _sceneCenter = new THREE.Vector3(
+                isFinite(_sMinX) ? (_sMinX + _sMaxX) / 2 : 0, 0,
+                isFinite(_sMinZ) ? (_sMinZ + _sMaxZ) / 2 : 0
+            );
+            // 包围半径（从中心到最远角的水平距离）
+            const _sceneRadius = isFinite(_sMinX)
+                ? Math.max(
+                    Math.hypot(_sMaxX - _sceneCenter.x, _sMaxZ - _sceneCenter.z),
+                    Math.hypot(_sMinX - _sceneCenter.x, _sMinZ - _sceneCenter.z),
+                    8)
+                : 8;
+            // 小场景（半径 8 左右）行为完全不变；大场景相应放大
+            const _sceneScale = Math.max(1.0, _sceneRadius / 12);
+            const _far = Math.max(200, _sceneRadius * 8);
+            // 🔥 近裁剪面也随尺度放大：near=0.1 + far 放大后 far/near 可达数万，
+            //    深度缓冲精度被摊薄到「几十厘米」，而路面与地面色块只差 0.008 单位，
+            //    于是互相穿插（道路缺角）。必须在**相机构造之前**算好，
+            //    否则 const 的暂时性死区会直接抛 ReferenceError。
+            const _near = Math.max(0.1, _sceneRadius / 500);
+            const _fogNear = 30 * _sceneScale;
+            const _fogFar = 70 * _sceneScale;
+
+            scene.fog = new THREE.Fog(fogColor, _fogNear, _fogFar);
+            
+            const _skyRadius = _far * 0.9;
+            const skyTopColor = new THREE.Color(style.scene_bg || 0x0a1a3a);
+            const skyBottomColor = new THREE.Color(0x1a2a4a);
+            const skyGeo = new THREE.SphereGeometry(_skyRadius, 32, 15);
             const skyMat = new THREE.ShaderMaterial({{
                 uniforms: {{
                     topColor: {{ value: skyTopColor }},
@@ -7347,20 +7947,52 @@ def generate_scene_html():
                         );
                     }}
                 `,
-                side: THREE.BackSide
+                side: THREE.BackSide,
+                fog: false           // 🔥 天空球不吃雾，否则会被雾色糊掉
             }});
             const sky = new THREE.Mesh(skyGeo, skyMat);
             sky.name = 'gradient-sky';
+            sky.frustumCulled = false;   // 保险：永不裁剪
             scene.add(sky);
+            console.log(`🌌 天空球半径: ${{_skyRadius.toFixed(0)}} (远裁剪面 ${{_far.toFixed(0)}})`);
+            
+            console.log(`📷 场景半径 ${{_sceneRadius.toFixed(0)}} -> 裁剪面 ${{_far.toFixed(0)}} / 雾 ${{_fogNear.toFixed(0)}}~${{_fogFar.toFixed(0)}}`);
 
-            // 雾效保留
-            const fogColor = style.fog_color || 0x0a0e17;
-            scene.fog = new THREE.Fog(fogColor, 30, 70);
+            const camera = new THREE.PerspectiveCamera(40, width/height, _near, _far);
 
-            const camera = new THREE.PerspectiveCamera(40, width/height, 0.1, 200);
-            camera.position.set(12, 10, 15);
+            // 📷 取景：让**整城入画**
+            //   之前用「对角线半径 × 1.6」当相机距离，这个算法是错的 ——
+            //   深圳对角线半径 581，算出距离 929，而 40° FOV 在该距离处的可视高度
+            //   只有 2×929×tan20° ≈ 676，小于城市横向跨度 726，所以开场只能看到
+            //   局部（表现为「看不出城市」）。
+            //   正确做法：按场景的水平/垂直跨度 + 相机 FOV 反算所需距离。
+            const _spanX = isFinite(_sMinX) ? (_sMaxX - _sMinX) : 0;
+            const _spanZ = isFinite(_sMinZ) ? (_sMaxZ - _sMinZ) : 0;
+            const _V_FOV = 40;                       // 与 PerspectiveCamera 保持一致
+            function fitDistance(aspect) {{
+                // 竖直方向可视高度 = 2*d*tan(vfov/2)，水平方向再乘 aspect
+                const vTan = Math.tan((_V_FOV * Math.PI / 180) / 2);
+                const hTan = vTan * Math.max(aspect, 0.1);
+                const dV = (_spanZ / 2) / vTan;
+                const dH = (_spanX / 2) / hTan;
+                // 取两者较大者，再留 15% 余量
+                return Math.max(22, Math.max(dV, dH) * 1.15);
+            }}
+            const _camDist = fitDistance(width / Math.max(height, 1));
+            // 45° 俯角看向场景中心 —— 这个角度看城市最清楚
+            camera.position.set(
+                _sceneCenter.x,
+                _camDist * 0.7,
+                _sceneCenter.z + _camDist * 0.72
+            );
+            console.log(`📷 取景: 跨度 ${{_spanX.toFixed(0)}}×${{_spanZ.toFixed(0)}} -> 相机距离 ${{_camDist.toFixed(0)}}`);
 
-            const renderer = new THREE.WebGLRenderer({{ antialias: true }});
+            // 🔥 深度精度修复（缺角/闪烁的根因）
+            //    far/near 比值过大时深度缓冲精度不足；_near 已在相机之前算好。
+            const renderer = new THREE.WebGLRenderer({{
+                antialias: true,
+                logarithmicDepthBuffer: true
+            }});
             renderer.setSize(width, height);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -7380,20 +8012,40 @@ def generate_scene_html():
             controls.dampingFactor = 0.08;
             controls.autoRotate = true;
             controls.autoRotateSpeed = 0.4;
-            controls.target.set(0, 1.5, 0);
+            controls.target.set(_sceneCenter.x, 1.5, _sceneCenter.z);
             controls.maxPolarAngle = Math.PI / 2.1;
             controls.minDistance = 3;
-            controls.maxDistance = 50;
+            // 拉远上限：至少能到「整城入画距离」的 2 倍，方便俯瞰
+            controls.maxDistance = Math.max(50, _camDist * 2);
 
             // ---------- 相机位置持久化（localStorage） ----------
+            // ⚠️ 关键：**不能无条件恢复**。
+            //    踩过的真实 bug：从全市场景（约 1000×600 单位）切换到一个小场景
+            //    （如原型只有 14×15 单位、位置在 x≈-138）后，localStorage 里的相机
+            //    还停在全市场景的远处（数百单位外），于是新场景在画面里缩成一小簇，
+            //    看起来像"3D 视图错位"。
+            //    修法：只有当保存的**注视点**仍落在当前场景附近时才恢复；
+            //    否则丢弃并沿用刚算好的 fitDistance 取景。
             try {{
                 const savedCam = localStorage.getItem('dtt_camera_state');
                 if (savedCam) {{
                     const cam = JSON.parse(savedCam);
-                    if (cam.position) camera.position.set(cam.position.x, cam.position.y, cam.position.z);
-                    if (cam.target) controls.target.set(cam.target.x, cam.target.y, cam.target.z);
-                    controls.update();
-                    console.log('📷 已恢复相机位置');
+                    const t = cam.target;
+                    // 判断保存的注视点是否还在当前场景范围内
+                    const _spanPad = Math.max(_spanX, _spanZ, 20) * 1.5;
+                    const _okTarget = t && isFinite(t.x) && isFinite(t.z)
+                        && Math.abs(t.x - _sceneCenter.x) <= _spanPad
+                        && Math.abs(t.z - _sceneCenter.z) <= _spanPad;
+                    if (_okTarget) {{
+                        if (cam.position) camera.position.set(cam.position.x, cam.position.y, cam.position.z);
+                        controls.target.set(t.x, t.y, t.z);
+                        controls.update();
+                        console.log('📷 已恢复相机位置');
+                    }} else {{
+                        console.log('📷 保存的相机属于其他场景（注视点偏离 '
+                            + _spanPad.toFixed(0) + ' 单位以上），改用自适应取景');
+                        localStorage.removeItem('dtt_camera_state');
+                    }}
                 }}
             }} catch (e) {{
                 console.warn('恢复相机位置失败:', e);
@@ -7888,14 +8540,19 @@ def generate_scene_html():
             function createRealtimeVisuals(baseHeight) {{
                 const layer = new THREE.Group();
                 layer.name = 'realtime-visuals';
-            
+
+                // 🔥 场景规模大时收敛所有发光元素的强度。
+                //    这些元素（LED 晕圈、顶部光环、脉冲扩散环）在几十个物体时
+                //    很好看，但上千个加色混合叠加就会烧成一片纯白（大光斑）。
+                const _gs = (typeof window !== 'undefined' && window.__DTT_GLOW_SCALE__) || 1.0;
+
                 // LED 指示灯
                 const led = new THREE.Mesh(
                     new THREE.SphereGeometry(0.08, 12, 12),
                     new THREE.MeshStandardMaterial({{
                         color: 0x00ff44,
                         emissive: 0x00ff44,
-                        emissiveIntensity: 1.5
+                        emissiveIntensity: 1.5 * _gs
                     }})
                 );
             
@@ -7905,7 +8562,7 @@ def generate_scene_html():
                     new THREE.MeshBasicMaterial({{
                         color: 0x00ff44,
                         transparent: true,
-                        opacity: 0.35,
+                        opacity: 0.35 * _gs,
                         blending: THREE.AdditiveBlending,
                         depthWrite: false
                     }})
@@ -7927,7 +8584,7 @@ def generate_scene_html():
                     new THREE.MeshStandardMaterial({{
                         color: 0x00ff44,
                         emissive: 0x00ff44,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.5 * _gs,
                         transparent: true,
                         opacity: 0.7
                     }})
@@ -7949,7 +8606,7 @@ def generate_scene_html():
                     new THREE.MeshBasicMaterial({{
                         color: 0x00ff44,
                         transparent: true,
-                        opacity: 0.6,
+                        opacity: 0.6 * _gs,
                         side: THREE.DoubleSide,
                         blending: THREE.AdditiveBlending,
                         depthWrite: false
@@ -7959,7 +8616,9 @@ def generate_scene_html():
                 pulseRing.position.y = 0.02;
                 pulseRing.userData.isPulseRing = true;
                 pulseRing.userData.pulsePhase = Math.random();  // 每个环错开相位
-                pulseRing.visible = (localStorage.getItem('pulseRingEnabled') !== 'false');
+                // 物体极多时（城市尺度）默认关掉脉冲环 —— 上千个加色环必烧白
+                pulseRing.visible = (localStorage.getItem('pulseRingEnabled') !== 'false')
+                                    && _gs > 0.5;
                 layer.add(pulseRing);
             
                 return layer;
@@ -8402,7 +9061,10 @@ def generate_scene_html():
                     "center_line": false
                 }}),
                 'water': (obj, style) => {{
-                    // 水面：一块略低于地面的平面，带一点透明与高光
+                    // 水面/地面色块：贴地平面。
+                    // 🔥 y 从 0.012 降到 0.004 —— 原先与路面(0.02)只差 0.008，
+                    //    在大场景下深度精度不够会互相穿插（道路缺角）。
+                    //    现在各层间距拉开：地面 -0.05 / 色块 0.004 / 路面 0.06。
                     const w = (obj.custom_props || {{}}).width || 20;
                     const l = (obj.custom_props || {{}}).length || 20;
                     const mesh = new THREE.Mesh(
@@ -8416,7 +9078,7 @@ def generate_scene_html():
                         }})
                     );
                     mesh.rotation.x = -Math.PI / 2;
-                    mesh.position.y = 0.012;
+                    mesh.position.y = 0.004;
                     mesh.receiveShadow = true;
                     const g = new THREE.Group();
                     g.add(mesh);
@@ -8465,23 +9127,299 @@ def generate_scene_html():
                 return group;
             }};
 
-            // ---------- InstancedMesh ----------
+            // ---------- InstancedMesh（城市尺度渲染的核心） ----------
+            // 为什么需要它：
+            //   每个物体独立建 mesh 时，6930 个物体 ≈ 2.8 万次 draw call，
+            //   现代 GPU 每帧提交这么多绘制命令会直接卡死。实例化把「同类型的
+            //   所有物体」合并成**一次** draw call —— 这是市级场景能跑起来的关键。
+            //
+            // 设计要点：
+            //   · 每个类型用自己的基础几何体（charger 方柱 / building 方盒 / road 扁条）
+            //   · 逐实例设置矩阵，把「物体的真实尺寸」烘焙进矩阵的 scale，
+            //     这样同一批实例可以有不同大小的楼和不同长度的路段
+            //   · 每个类型单独一个 InstancedMesh（不是全场景一个），
+            //     因为几何体和材质不同
+            function instancingConfig(type) {{
+                // 基础几何尺寸 + 材质参数；实际尺寸由矩阵 scale 决定
+                const table = {{
+                    'charger_fast':  {{ geo: [1, 1, 1],       color: '#4a90d9', emissive: 0.25, name: 'charger_fast' }},
+                    'charger_slow':  {{ geo: [1, 1, 1],       color: '#5cb85c', emissive: 0.25, name: 'charger_slow' }},
+                    'charger_super': {{ geo: [1, 1, 1],       color: '#9b59b6', emissive: 0.25, name: 'charger_super' }},
+                    // 楼块：单位立方体，scale 直接等于 (width, height, depth)
+                    'building':      {{ geo: [1, 1, 1],       color: '#8a9aaa', emissive: 0.0,  name: 'building' }},
+                    'building_tall': {{ geo: [1, 1, 1],       color: '#7fa8d0', emissive: 0.0,  name: 'building_tall' }},
+                    // 路网：单位扁条，scale.x = 长度、scale.z = 宽度
+                    'road':          {{ geo: [1, 0.06, 1],    color: '#454b54', emissive: 0.0,  name: 'road' }},
+                    'water':         {{ geo: [1, 0.02, 1],    color: '#1d4f6e', emissive: 0.0,  name: 'water' }},
+                }};
+                return table[type] || null;
+            }}
+
+            // 是否值得走实例化：物体够多才划算（少了反而失去精细模型与单独选中）
+            const INSTANCING_MIN = 200;
+            
+            // 🔥 充电桩专用实例化：柱 + 环 + LED 三件套共享同一批矩阵
+            //    为什么不用 createInstancedMeshes 的通用 Box：
+            //      通用路径只画一个方块，没有光环、没有 LED，深圳场景下 1423
+            //      个充电桩全走这条路 → 视觉上只剩几何体。
+            //    为什么是 3 个 InstancedMesh 而不是 1 个合并几何体：
+            //      光环/LED 需要 Additive 混色和独立颜色，合并后只能共用一个材质，
+            //      发光效果会被主柱材质吃掉。
+            function createInstancedChargers(type, group) {{
+                const count = group.length;
+                if (count === 0) return false;
+
+                // 参数按类型区分
+                const cfgMap = {{
+                    'charger_fast':  {{ h: 2.0, w: 0.32, baseColor: '#4a90d9' }},
+                    'charger_slow':  {{ h: 1.5, w: 0.26, baseColor: '#5cb85c' }},
+                    'charger_super': {{ h: 2.5, w: 0.38, baseColor: '#9b59b6' }},
+                }};
+                const cfg = cfgMap[type] || cfgMap['charger_fast'];
+
+                // ===== 1) 主柱 =====
+                const pillarGeo = new THREE.BoxGeometry(cfg.w, cfg.h, cfg.w);
+                const pillarMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(cfg.baseColor),
+                    roughness: 0.4,
+                    metalness: 0.3,
+                    emissive: new THREE.Color(cfg.baseColor),
+                    emissiveIntensity: 0.15,
+                }});
+                const pillarMesh = new THREE.InstancedMesh(pillarGeo, pillarMat, count);
+                pillarMesh.castShadow = true;
+                pillarMesh.receiveShadow = true;
+                pillarMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+                // ===== 2) 顶部光环 =====
+                const ringGeo = new THREE.TorusGeometry(cfg.w * 1.3, 0.03, 8, 20);
+                const ringMat = new THREE.MeshBasicMaterial({{
+                    color: new THREE.Color(cfg.baseColor),
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                }});
+                const ringMesh = new THREE.InstancedMesh(ringGeo, ringMat, count);
+                ringMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                ringMesh.renderOrder = 10;
+
+                // ===== 3) LED 顶球 =====
+                const ledGeo = new THREE.SphereGeometry(0.07, 8, 8);
+                const ledMat = new THREE.MeshBasicMaterial({{
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                }});
+                const ledMesh = new THREE.InstancedMesh(ledGeo, ledMat, count);
+                ledMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                ledMesh.renderOrder = 11;
+
+                // ===== 共享矩阵填充 =====
+                const dummy = new THREE.Object3D();
+                const instanceData = [];
+                const color = new THREE.Color();
+
+                group.forEach((obj, idx) => {{
+                    const pos = obj.position || {{ x: 0, y: 0, z: 0 }};
+                    const scale = obj.scale || {{ x: 1, y: 1, z: 1 }};
+                    const rot = obj.rotation || {{ x: 0, y: 0, z: 0 }};
+
+                    // 主柱：底部对齐地面
+                    dummy.position.set(pos.x, (pos.y || 0) + cfg.h / 2, pos.z);
+                    dummy.scale.set(scale.x, scale.y, scale.z);
+                    dummy.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
+                    dummy.updateMatrix();
+                    pillarMesh.setMatrixAt(idx, dummy.matrix);
+
+                    // 光环：柱子顶部
+                    dummy.position.set(pos.x, (pos.y || 0) + cfg.h + 0.05, pos.z);
+                    dummy.rotation.set(Math.PI / 2, 0, 0);
+                    dummy.scale.set(scale.x, scale.y, scale.z);
+                    dummy.updateMatrix();
+                    ringMesh.setMatrixAt(idx, dummy.matrix);
+
+                    // LED：光环上方一点点
+                    dummy.position.set(pos.x, (pos.y || 0) + cfg.h + 0.05, pos.z);
+                    dummy.rotation.set(0, 0, 0);
+                    dummy.updateMatrix();
+                    ledMesh.setMatrixAt(idx, dummy.matrix);
+
+                    // 逐实例颜色：利用率 → 色相
+                    const util = obj.utilization || 0.5;
+                    const hue = 0.6 - util * 0.6;
+                    color.setHSL(hue, 0.9, 0.5);
+                    pillarMesh.setColorAt(idx, color);
+                    ringMesh.setColorAt(idx, color);
+                    // LED 保持暖白偏色，突出"发光点"
+                    ledMesh.setColorAt(idx, new THREE.Color(0xfff5cc));
+
+                    instanceData.push({{
+                        id: obj.id,
+                        type: obj.type,
+                        position: pos,
+                        scale: scale,
+                        rotation: rot,
+                        bind_station_id: obj.bind_station_id || null,
+                        name: obj.name,
+                        utilization: util,
+                        color: color.clone()
+                    }});
+                }});
+
+                pillarMesh.instanceMatrix.needsUpdate = true;
+                ringMesh.instanceMatrix.needsUpdate = true;
+                ledMesh.instanceMatrix.needsUpdate = true;
+                if (pillarMesh.instanceColor) pillarMesh.instanceColor.needsUpdate = true;
+                if (ringMesh.instanceColor) ringMesh.instanceColor.needsUpdate = true;
+                if (ledMesh.instanceColor) ledMesh.instanceColor.needsUpdate = true;
+
+                // ===== 三件套互相关联，方便后续统一刷新颜色 =====
+                pillarMesh.userData.instanceData = instanceData;
+                pillarMesh.userData.type = type;
+                pillarMesh.userData.isInstanced = true;
+                pillarMesh.userData.groupType = type;
+                pillarMesh.userData.objectId = null;
+                // 🔥 记住兄弟 mesh，updateInstancedChargerColor 用得到
+                pillarMesh.userData.ringMesh = ringMesh;
+                pillarMesh.userData.ledMesh = ledMesh;
+                pillarMesh.name = 'instanced_' + type;
+
+                // 🔥 关键：不要 hasPulse！材质级脉冲会盖住逐实例颜色差异
+                pillarMesh.userData.hasPulse = false;
+
+                scene.add(pillarMesh);
+                scene.add(ringMesh);
+                scene.add(ledMesh);
+                
+                // 🔥 光柱：单独一个 InstancedMesh，但记录到 pillar 的 userData 上
+                //    方便 updateInstancedChargerColor 统一刷色
+                const beamMesh = createInstancedChargerBeacons(type, group);
+                if (beamMesh) {{
+                    pillarMesh.userData.beamMesh = beamMesh;
+                    // 🔥 初始可见性跟随开关（默认关闭）
+                    beamMesh.visible = (localStorage.getItem('beaconEnabled') === 'true');
+                }}
+                
+                objectMeshes.push(pillarMesh);
+                clickables.push(pillarMesh);
+
+                console.log(`⚡ 充电桩三件套 ${{type}}: ${{count}} 个 → 3 次 draw call`);
+                return true;
+            }}
+            
+            // 🔥 实例化信标光柱：一根桩 = 两个交叉平面，合并成一个几何体后
+            //    用一次 InstancedMesh 画完 1423 根。
+            //    为什么不做 5 件套全套：LED 晕圈/脉冲环都需要逐实例相位/动画，
+            //    在 InstancedMesh 里只能靠每帧 setMatrixAt 重算，1423 个实例
+            //    每帧重算矩阵会把 CPU 吃满（这正是当初压成单方块的原因）。
+            //    光柱是静态几何体，逐实例只改颜色，代价可以忽略。
+            function createInstancedChargerBeacons(type, group) {{
+                const count = group.length;
+                if (count === 0) return null;
+
+                const cfgMap = {{
+                    'charger_fast':  {{ h: 8.0, w: 0.7, top: 2.0 }},
+                    'charger_slow':  {{ h: 6.0, w: 0.6, top: 1.5 }},
+                    'charger_super': {{ h: 10.0, w: 0.85, top: 2.5 }},
+                }};
+                const cfg = cfgMap[type] || cfgMap['charger_fast'];
+
+                // ===== 1) 渐变纹理（底实顶虚）=====
+                const canvas = document.createElement('canvas');
+                canvas.width = 16; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                const grad = ctx.createLinearGradient(0, 0, 0, 256);
+                grad.addColorStop(0.0, 'rgba(255,255,255,1.0)');   // canvas 顶 = 光柱底
+                grad.addColorStop(0.25, 'rgba(255,255,255,0.65)');
+                grad.addColorStop(0.7, 'rgba(255,255,255,0.2)');
+                grad.addColorStop(1.0, 'rgba(255,255,255,0)');      // canvas 底 = 光柱顶
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 16, 256);
+                const tex = new THREE.CanvasTexture(canvas);
+
+                // ===== 2) 合并两个交叉平面 =====
+                const plane1 = new THREE.PlaneGeometry(cfg.w, cfg.h);
+                plane1.translate(0, cfg.h / 2, 0);
+                const plane2 = new THREE.PlaneGeometry(cfg.w, cfg.h);
+                plane2.rotateY(Math.PI / 2);
+                plane2.translate(0, cfg.h / 2, 0);
+                const beamGeo = mergeGeometries([plane1, plane2], false);
+
+                // ===== 3) 材质（加色、无深度写入）=====
+                const beamMat = new THREE.MeshBasicMaterial({{
+                    map: tex,
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.55,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    side: THREE.DoubleSide,
+                }});
+
+                // ===== 4) InstancedMesh =====
+                const beamMesh = new THREE.InstancedMesh(beamGeo, beamMat, count);
+                beamMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                beamMesh.renderOrder = 5;
+                beamMesh.frustumCulled = false;   // 光柱很高，用默认包围盒会被误裁
+
+                // ===== 5) 填充矩阵 =====
+                const dummy = new THREE.Object3D();
+                const color = new THREE.Color();
+                const instanceData = [];
+
+                group.forEach((obj, idx) => {{
+                    const pos = obj.position || {{ x: 0, y: 0, z: 0 }};
+                    const scale = obj.scale || {{ x: 1, y: 1, z: 1 }};
+                    const util = obj.utilization || 0.5;
+
+                    // 光柱底 = 充电桩顶部（跟光环同高）
+                    dummy.position.set(pos.x, (pos.y || 0) + cfg.top, pos.z);
+                    dummy.scale.set(scale.x, scale.y, scale.z);
+                    dummy.rotation.set(0, 0, 0);
+                    dummy.updateMatrix();
+                    beamMesh.setMatrixAt(idx, dummy.matrix);
+
+                    const hue = 0.6 - util * 0.6;
+                    color.setHSL(hue, 0.9, 0.55);
+                    beamMesh.setColorAt(idx, color);
+
+                    instanceData.push({{
+                        id: obj.id,
+                        bind_station_id: obj.bind_station_id || null,
+                    }});
+                }});
+
+                beamMesh.instanceMatrix.needsUpdate = true;
+                if (beamMesh.instanceColor) beamMesh.instanceColor.needsUpdate = true;
+
+                beamMesh.userData.instanceData = instanceData;
+                beamMesh.userData.isBeam = true;
+                beamMesh.userData.isBeam = true;
+                beamMesh.userData.beamConfig = cfg;   // 🔥 新增
+                beamMesh.name = 'instanced_beacon_' + type;
+
+                scene.add(beamMesh);
+                console.log(`🗼 信标光柱 ${{type}}: ${{count}} 根 → 1 次 draw call`);
+                return beamMesh;
+            }}
+
             function createInstancedMeshes(type, group) {{
-                const config = {{
-                    'charger_fast': {{ width: 0.3, height: 2.0, color: '#4a90d9' }},
-                    'charger_slow': {{ width: 0.25, height: 1.5, color: '#5cb85c' }},
-                    'charger_super': {{ width: 0.35, height: 2.5, color: '#9b59b6' }}
-                }}[type] || {{ width: 0.3, height: 2.0, color: '#4a90d9' }};
+                const cfg = instancingConfig(type);
+                if (!cfg) return false;
 
                 const count = group.length;
-                if (count === 0) return;
+                if (count === 0) return false;
 
-                const geometry = new THREE.BoxGeometry(config.width, config.height, config.width);
+                const geometry = new THREE.BoxGeometry(cfg.geo[0], cfg.geo[1], cfg.geo[2]);
                 const material = new THREE.MeshStandardMaterial({{
-                    roughness: 0.4,
+                    color: new THREE.Color(cfg.color),
+                    roughness: 0.6,
                     metalness: 0.2,
-                    emissive: new THREE.Color(config.color),
-                    emissiveIntensity: 0.2,
+                    emissive: new THREE.Color(cfg.color),
+                    emissiveIntensity: cfg.emissive,
                 }});
 
                 const mesh = new THREE.InstancedMesh(geometry, material, count);
@@ -8497,15 +9435,52 @@ def generate_scene_html():
                     const pos = obj.position || {{ x: 0, y: 0, z: 0 }};
                     const scale = obj.scale || {{ x: 1, y: 1, z: 1 }};
                     const rot = obj.rotation || {{ x: 0, y: 0, z: 0 }};
-                    dummy.position.set(pos.x, pos.y || 0, pos.z);
-                    dummy.scale.set(scale.x, scale.y, scale.z);
+                    const cp = obj.custom_props || {{}};
+
+                    // 把「真实尺寸」烘焙进矩阵 scale
+                    let sx = scale.x, sy = scale.y, sz = scale.z;
+                    let py = pos.y || 0;
+
+                    if (type.startsWith('charger')) {{
+                        // 充电桩：细柱，高度固定
+                        const h = cp.height || 2.0;
+                        sx *= 0.3;
+                        sy *= h;
+                        sz *= 0.3;
+                        py = (pos.y || 0) + h / 2;          // 底部对齐地面
+                    }} else if (type.startsWith('building')) {{
+                        const w = cp.width || 2.0;
+                        const h = cp.height || 3.0;
+                        const d = cp.depth || 1.5;
+                        sx *= w;
+                        sy *= h;
+                        sz *= d;
+                        py = (pos.y || 0) + h / 2;          // 底部对齐地面
+                    }} else if (type === 'road' || type === 'water') {{
+                        // 路面/水面：扁条。scale.x = 长度，scale.z = 宽度
+                        const length = cp.length || 20;
+                        const width = cp.width || 20;
+                        sx *= length;
+                        sy *= 1;
+                        sz *= width;
+                    }}
+
+                    dummy.position.set(pos.x, py, pos.z);
+                    dummy.scale.set(sx, sy, sz);
                     dummy.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
                     dummy.updateMatrix();
                     mesh.setMatrixAt(idx, dummy.matrix);
 
-                    let util = obj.utilization || 0.5;
-                    const hue = 0.6 - util * 0.6;
-                    color.setHSL(hue, 0.9, 0.5);
+                    // 逐实例颜色：优先用物体自带色（楼块按高度分色、路面按等级分色）
+                    if (type.startsWith('charger')) {{
+                        const util = obj.utilization || 0.5;
+                        const hue = 0.6 - util * 0.6;
+                        color.setHSL(hue, 0.9, 0.5);
+                    }} else if (cp.color) {{
+                        color.set(cp.color);
+                    }} else {{
+                        color.set(cfg.color);
+                    }}
                     mesh.setColorAt(idx, color);
 
                     instanceData.push({{
@@ -8516,28 +9491,37 @@ def generate_scene_html():
                         rotation: rot,
                         bind_station_id: obj.bind_station_id || null,
                         name: obj.name,
-                        utilization: util,
+                        utilization: obj.utilization || 0.5,
                         color: color.clone()
                     }});
                 }});
                 mesh.instanceMatrix.needsUpdate = true;
-                mesh.instanceColor.needsUpdate = true;
+                if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
                 mesh.userData.instanceData = instanceData;
                 mesh.userData.type = type;
                 mesh.userData.isInstanced = true;
                 mesh.userData.groupType = type;
-                mesh.name = 'chargerInstancedMesh';
+                // 🔥 拾取需要：现有逻辑会用 instanceData[i].id 去 objectMeshes 里
+                //    找 userData.objectId 匹配的组。单实例网格没有唯一的 objectId，
+                //    置为 null 让它走「按 instanceData 处理」的分支。
+                mesh.userData.objectId = null;
+                mesh.name = 'instanced_' + type;
 
                 scene.add(mesh);
                 objectMeshes.push(mesh);
-
-                mesh.userData.hasPulse = true;
-                mesh.userData.pulseSpeed = 0.3 + Math.random() * 0.4;
-                mesh.userData.originalEmissive = new THREE.Color(config.color);
-                mesh.userData.originalEmissiveIntensity = 0.2;
-
                 clickables.push(mesh);
+
+                // 只有充电桩带脉冲（楼和路不该闪）
+                if (type.startsWith('charger')) {{
+                    mesh.userData.hasPulse = true;
+                    mesh.userData.pulseSpeed = 0.3 + Math.random() * 0.4;
+                    mesh.userData.originalEmissive = new THREE.Color(cfg.color);
+                    mesh.userData.originalEmissiveIntensity = cfg.emissive;
+                }}
+
+                console.log(`⚡ 实例化 ${{type}}: ${{count}} 个物体合并为 1 次 draw call`);
+                return true;
             }}
 
             // ---------- 渲染 ----------
@@ -8560,7 +9544,7 @@ def generate_scene_html():
 
             console.log(`📊 已建立 ${{stationToObjectMap.size}} 个充电桩的 station_id 映射`);
 
-                        function updateChargerVisual(group, utilization) {{
+            function updateChargerVisual(group, utilization) {{
                 const visualLayer = group.userData.visualLayer;
                 if (!visualLayer) return;
             
@@ -8650,8 +9634,47 @@ def generate_scene_html():
                 group.userData.currentPulseSpeed = pulseSpeed;
                 group.userData.currentStatus = statusText;
             }}
+            
+            function updateInstancedChargerColor(mesh, stationId, utilization) {{
+                const data = mesh.userData && mesh.userData.instanceData;
+                if (!data) return;
 
-                        function updateChargerStatus(stationId, utilization, availableSlots, status) {{
+                const color = new THREE.Color();
+                const hue = 0.6 - utilization * 0.6;
+                color.setHSL(hue, 0.9, 0.5);
+
+                // 🔥 用 fill 而不是逐个 fillColor，因为 setColorAt 里要逐实例写
+                let changed = false;
+                for (let i = 0; i < data.length; i++) {{
+                    const inst = data[i];
+                    if (inst && inst.bind_station_id === stationId) {{
+                        mesh.setColorAt(i, color);
+                        inst.utilization = utilization;
+
+                        // 🔥 同步刷兄弟 mesh（光环 + LED）
+                        const ringMesh = mesh.userData.ringMesh;
+                        const ledMesh  = mesh.userData.ledMesh;
+                        const beamMesh = mesh.userData.beamMesh;
+                        if (ringMesh) ringMesh.setColorAt(i, color);
+                        if (ledMesh)  ledMesh.setColorAt(i, new THREE.Color(0xfff5cc));
+                        if (beamMesh) beamMesh.setColorAt(i, color);
+
+                        changed = true;
+                    }}
+                }}
+
+                if (changed) {{
+                    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+                    const ringMesh = mesh.userData.ringMesh;
+                    const ledMesh  = mesh.userData.ledMesh;
+                    const beamMesh = mesh.userData.beamMesh;
+                    if (ringMesh && ringMesh.instanceColor) ringMesh.instanceColor.needsUpdate = true;
+                    if (ledMesh && ledMesh.instanceColor)  ledMesh.instanceColor.needsUpdate = true;
+                    if (beamMesh && beamMesh.instanceColor) beamMesh.instanceColor.needsUpdate = true;
+                }}
+            }}
+
+            function updateChargerStatus(stationId, utilization, availableSlots, status) {{
                 // 原有逻辑
                 let targetObjId = null;
                 objects.forEach(obj => {{
@@ -8661,7 +9684,20 @@ def generate_scene_html():
                     }}
                 }});
             
+                // 🔥 修复：分两趟遍历 —— 实例化充电桩走 setColorAt，逐物体渲染的走 updateChargerVisual
+                //    （原来这一趟对 InstancedMesh 直接 return，1423 个深圳充电桩的实时数据全部失效）
+
+                // 第 1 趟：实例化充电桩（大场景主路径）
                 objectMeshes.forEach(group => {{
+                    if (!group.isInstancedMesh) return;
+                    if (!group.userData || !group.userData.type) return;
+                    if (!group.userData.type.startsWith('charger')) return;
+                    updateInstancedChargerColor(group, stationId, utilization);
+                }});
+
+                // 第 2 趟：逐物体渲染的充电桩（小场景路径）
+                objectMeshes.forEach(group => {{
+                    if (group.isInstancedMesh) return;   // 已在第 1 趟处理
                     if (!group.userData || !group.userData.objectId) return;
                     if (targetObjId && group.userData.objectId !== targetObjId) return;
                     updateChargerVisual(group, utilization);
@@ -8765,7 +9801,16 @@ def generate_scene_html():
                 const panel = document.getElementById('info-panel');
                 const content = document.getElementById('panel-content');
                 const title = document.getElementById('panel-title-text');
-                title.textContent = objData.name || '物体';
+                // 🔥 三级兜底：name → "站点 ID" → "物体"
+                let _title = objData.name;
+                if (!_title || _title.trim() === '') {{
+                    if (objData.bind_station_id) {{
+                        _title = '站点 ' + objData.bind_station_id;
+                    }} else {{
+                        _title = '物体';
+                    }}
+                }}
+                title.textContent = _title;
                 let html = `
                     <div><strong>类型：</strong>${{objData.type}}</div>
                     <div><strong>位置：</strong>(${{objData.position.x.toFixed(2)}}, ${{objData.position.y.toFixed(2)}}, ${{objData.position.z.toFixed(2)}})</div>
@@ -8969,9 +10014,40 @@ def generate_scene_html():
                     typeGroups[type].push(obj);
                 }});
             
+                // ⚡ 城市尺度渲染：物体多的类型走 InstancedMesh
+                //    原先这里写死「所有物体逐个建 mesh」，6930 个物体 ≈ 2.8 万次
+                //    draw call，浏览器直接卡死。现在按类型分组：
+                //      · 某类型物体数 ≥ INSTANCING_MIN（且该类型支持实例化）
+                //        -> 整组压成 1 次 draw call
+                //      · 否则走原来的精细逐物体路径（保留模型细节与单独选中）
+                //    小场景（几十个物体）行为完全不变。
                 const processedIds = new Set();
-                console.log('📌 InstancedMesh 已禁用，所有物体使用程序化生成');
-            
+                const instancedTypes = [];
+                
+                for (const [type, group] of Object.entries(typeGroups)) {{
+                    if (group.length < INSTANCING_MIN) continue;
+
+                    // 🔥 充电桩优先走专用三件套（带光环/LED），
+                    //    否则会落到 createInstancedMeshes 的"单方块"路径
+                    let ok = false;
+                    if (type.startsWith('charger')) {{
+                        ok = createInstancedChargers(type, group);
+                    }} else if (instancingConfig(type)) {{
+                        ok = createInstancedMeshes(type, group);
+                    }}
+
+                    if (ok) {{
+                        instancedTypes.push(`${{type}}(${{group.length}})`);
+                        group.forEach(o => processedIds.add(o.id));
+                    }}
+                }}
+
+                if (instancedTypes.length) {{
+                    console.log(`⚡ 实例化启用: ${{instancedTypes.join(', ')}} —— 共 ${{processedIds.size}} 个物体`);
+                }} else {{
+                    console.log('📌 物体数未达阈值，使用逐物体精细渲染');
+                }}
+
                 const remainingObjects = objects.filter(obj => !processedIds.has(obj.id));
                 const renderPromises = [];
                 
@@ -9413,6 +10489,13 @@ def generate_scene_html():
                 if (tourBtn) {{
                     tourBtn.style.display = 'block';
                 }}
+                
+                // 🔮 预测图层按钮：有预测数据就显示
+                const predBtn = document.getElementById('prediction-btn');
+                if (predBtn && sceneData.predictions && Object.keys(sceneData.predictions).length > 0) {{
+                    predBtn.style.display = 'flex';
+                }}
+                
                 }});
                 
                 
@@ -9646,47 +10729,85 @@ def generate_scene_html():
 
             const sunColor = style.sun_color ? new THREE.Color(style.sun_color) : new THREE.Color(0xffeedd);
             const sun = new THREE.DirectionalLight(sunColor, style.sun_intensity || 2.5);
-            sun.position.set(10, 25, 8);
+            const _sunR = Math.max(20, _sceneRadius);
+            sun.position.set(_sunR * 0.4, _sunR * 1.1, _sunR * 0.35);
             sun.castShadow = true;
             sun.shadow.mapSize.width = 2048;
             sun.shadow.mapSize.height = 2048;
-            const d = 25;
+            // 阴影相机范围随场景放大，否则大场景只有中心一小块有阴影
+            const d = Math.max(25, _sceneRadius * 1.2);
             sun.shadow.camera.left = -d;
             sun.shadow.camera.right = d;
             sun.shadow.camera.top = d;
             sun.shadow.camera.bottom = -d;
             sun.shadow.camera.near = 1;
-            sun.shadow.camera.far = 70;
+            sun.shadow.camera.far = Math.max(70, _sceneRadius * 4);
             scene.add(sun);
 
             const fill = new THREE.DirectionalLight(0x4488ff, 0.6);
-            fill.position.set(-15, 8, -10);
+            fill.position.set(-_sunR * 0.6, _sunR * 0.35, -_sunR * 0.4);
             scene.add(fill);
 
             // ---------- Bloom ----------
+            // 🔥 按场景规模自动收敛发光强度：
+            //    这套泛光参数（threshold 0.15）是按「几十个物体」调的。
+            //    放到上千个物体的城市场景里，每个充电桩都带自发光环 +
+            //    加色混合的脉冲扩散环，几十个半透明环在视线方向叠加
+            //    就会烧成一片纯白，再被泛光糊开 —— 表现为屏幕中间一个大光斑。
+            //    这里按物体总数线性收敛：≤50 个物体完全不减，≥1000 个减到 35%。
+            const _objCount = (sceneData.objects || []).length;
+            const _glowScale = _objCount <= 50
+                ? 1.0
+                : Math.max(0.35, 1.0 - 0.65 * (_objCount - 50) / 950);
+
             const composer = new EffectComposer(renderer);
             const renderPass = new RenderPass(scene, camera);
             composer.addPass(renderPass);
 
             const bloomPass = new UnrealBloomPass(
                 new THREE.Vector2(width, height),
-                style.bloom_strength || 0.6,
-                style.bloom_radius || 0.3,
-                style.bloom_threshold || 0.15
+                (style.bloom_strength || 0.6) * _glowScale,
+                // 半径同步收敛：叠得越密，糊开得越小
+                (style.bloom_radius || 0.3) * (0.5 + 0.5 * _glowScale),
+                // 阈值反向提高：物体越多，越难触发泛光
+                Math.min(0.9, (style.bloom_threshold || 0.15) / _glowScale)
             );
             composer.addPass(bloomPass);
 
+            // 供 createRealtimeVisuals 判断是否要弱化发光元素
+            window.__DTT_GLOW_SCALE__ = _glowScale;
+            // 🔥 数据是异步加载的，这里 objectCount=0，_glowScale 必然是 1。
+            //    真正的收敛要在几何到位后重算（见 _applySceneScale）
+            window.__DTT_GLOW_STYLE__ = {{
+                strength: style.bloom_strength || 0.6,
+                radius: style.bloom_radius || 0.3,
+                threshold: style.bloom_threshold || 0.15
+            }};
+
             // ---------- 地面 ----------
+            // 🔥 按场景范围自适应：原先网格/草地写死 80×80、圆盘半径 12，
+            //    在几十个物体的场景里够用；但深圳市场景跨度 726×454 单位，
+            //    物体直接跑到地面外面去了。
+            //    场景包围盒（_sceneCenter / _spanX / _spanZ）在文件前面的
+            //    「场景尺度自适应」那段已经算过，这里直接复用 ——
+            //    注意不要再 const 一次同名变量（同作用域重复声明是语法错误，
+            //    而且会让前面的使用进入 TDZ，页面直接白屏）。
+            const _worldSize = Math.max(80, Math.max(_spanX, _spanZ) * 1.25);
+            const _centerX = _sceneCenter.x;
+            const _centerZ = _sceneCenter.z;
+            // 网格分格：每格约 6 个单位，格数控制在合理范围
+            const _gridDiv = Math.max(80, Math.min(400, Math.round(_worldSize / 6)));
+
             const gridColor1 = style.grid_color ? new THREE.Color(style.grid_color) : new THREE.Color(0x6699cc);
             const gridColor2 = style.grid_color ? new THREE.Color(style.grid_color).multiplyScalar(0.5) : new THREE.Color(0x2a4a6a);
-            const grid = new THREE.GridHelper(80, 80, gridColor1, gridColor2);
-            grid.position.y = -0.05;
+            const grid = new THREE.GridHelper(_worldSize, _gridDiv, gridColor1, gridColor2);
+            grid.position.set(_centerX, -0.05, _centerZ);
             scene.add(grid);
 
             const groundColor = style.ground_color ? new THREE.Color(style.ground_color) : new THREE.Color(0x1a2a3a);
 
-            // 🔥 新增：大范围草地平面（在最底层，比圆盘更大）
-            const grassGeo = new THREE.PlaneGeometry(80, 80);
+            // 🔥 大范围草地平面（在最底层，比圆盘更大）
+            const grassGeo = new THREE.PlaneGeometry(_worldSize * 1.6, _worldSize * 1.6);
             const grassMat = new THREE.MeshStandardMaterial({{
                 color: 0x152a25,          // 深墨绿，与深空主题融合
                 roughness: 0.95,
@@ -9694,14 +10815,14 @@ def generate_scene_html():
             }});
             const grass = new THREE.Mesh(grassGeo, grassMat);
             grass.rotation.x = -Math.PI / 2;
-            grass.position.y = -0.15;      // 比圆盘低，避免 z-fighting
+            grass.position.set(_centerX, -0.15, _centerZ);   // 比圆盘低，避免 z-fighting
             grass.receiveShadow = true;
             grass.name = 'grass-plane';
             scene.add(grass);
 
-            // 原有圆盘地面
+            // 原有圆盘地面（半径随场景放大）
             const ground = new THREE.Mesh(
-                new THREE.CircleGeometry(12, 64),
+                new THREE.CircleGeometry(Math.max(12, _worldSize * 0.62), 64),
                 new THREE.MeshStandardMaterial({{
                     "color": groundColor,
                     "transparent": true,
@@ -9711,9 +10832,10 @@ def generate_scene_html():
                 }})
             );
             ground.rotation.x = -Math.PI / 2;
-            ground.position.y = -0.05;
+            ground.position.set(_centerX, -0.05, _centerZ);
             ground.receiveShadow = true;
             scene.add(ground);
+            console.log(`🗺️ 地面尺寸自适应: ${{_worldSize.toFixed(0)}} 单位, 中心 (${{_centerX.toFixed(0)}}, ${{_centerZ.toFixed(0)}})`);
 
             // 相机飞行指令（消费后立即清除）
             const flyTo = sceneData.flyTo;
@@ -9827,6 +10949,62 @@ def generate_scene_html():
                     }} else if (hit.userData && hit.userData.parentId) {{
                         parentId = hit.userData.parentId;
                     }}
+                    
+                    // ============================================================
+                    // 🔥 实例化物体的拾取拦截
+                    //    关键修复：本地"按利用率上色"只对充电桩做。
+                    //    建筑/道路也是 InstancedMesh，但它们没有 utilization，
+                    //    强行刷色会被 fallback 到 "0.5 → 绿"，把所有楼房变绿。
+                    // ============================================================
+                    if (parentId && hit.isInstancedMesh) {{
+                        const _hitType = (hit.userData && hit.userData.type) || '';
+                        const _isCharger = _hitType.startsWith('charger');
+
+                        // 1) 回传选中到 Python
+                        try {{
+                            const url = new URL(window.parent.location.href);
+                            url.searchParams.set('selected', parentId);
+                            window.parent.history.replaceState({{}}, '', url);
+                            window.parent.dispatchEvent(new PopStateEvent('popstate'));
+                        }} catch (e) {{
+                            console.warn('回传选中失败:', e);
+                        }}
+
+                        // 2) 本地高亮：只对充电桩做（建筑/道路不动颜色）
+                        if (_isCharger) {{
+                            const _instData = hit.userData.instanceData;
+                            if (_instData) {{
+                                const _orig = new THREE.Color();
+                                const _hl = new THREE.Color(0xffffff);
+                                for (let _i = 0; _i < _instData.length; _i++) {{
+                                    if (_instData[_i].id === parentId) {{
+                                        hit.setColorAt(_i, _hl);
+                                    }} else {{
+                                        const _u = _instData[_i].utilization || 0.5;
+                                        _orig.setHSL(0.6 - _u * 0.6, 0.9, 0.5);
+                                        hit.setColorAt(_i, _orig);
+                                    }}
+                                }}
+                                if (hit.instanceColor) hit.instanceColor.needsUpdate = true;
+                                if (hit.userData.ringMesh && hit.userData.ringMesh.instanceColor)
+                                    hit.userData.ringMesh.instanceColor.needsUpdate = true;
+                                if (hit.userData.beamMesh && hit.userData.beamMesh.instanceColor)
+                                    hit.userData.beamMesh.instanceColor.needsUpdate = true;
+                            }}
+                        }}
+
+                        // 3) 弹出 3D 悬浮信息面板
+                        showInfoPanel(parentId);
+
+                        // 4) Toast 提示
+                        const _objData = objects.find(o => o.id === parentId);
+                        if (typeof showToast === 'function') {{
+                            showToast('✅ 已选中：' + (_objData && _objData.name ? _objData.name : parentId));
+                        }}
+
+                        console.log('✅ 选中实例化物体:', parentId, '类型:', _hitType);
+                        return;
+                    }}
 
                     if (parentId) {{
                         const selectedGroup = objectMeshes.find(g =>
@@ -9908,6 +11086,19 @@ def generate_scene_html():
                 renderer.setSize(w, h);
                 labelRenderer.setSize(w, h);
                 composer.setSize(w, h);
+
+                // 🔥 取景距离依赖宽高比：窗口变窄时原来的距离会装不下整城。
+                //    这里按新 aspect 重算，并同步拉远上限。
+                //    只在「尚未手动缩放」时自动调整，避免覆盖用户的视角。
+                if (!camera.userData || !camera.userData.userAdjusted) {{
+                    const d = fitDistance(w / Math.max(h, 1));
+                    const dir = camera.position.clone().sub(controls.target);
+                    const len = dir.length();
+                    if (len > 1e-6) {{
+                        camera.position.copy(controls.target).add(dir.multiplyScalar(d / len));
+                    }}
+                }}
+                controls.maxDistance = Math.max(50, fitDistance(w / Math.max(h, 1)) * 2);
             }}
             window.addEventListener('resize', resize);
             
@@ -10060,6 +11251,15 @@ def generate_scene_html():
             // ---------- 动画循环 ----------
             function animate() {{
                 requestAnimationFrame(animate);
+                
+                // 🔥 天空球跟随相机：保证相机永远在球心
+                //    为什么：天空球固定在场景中心时，相机拉远会跑到球外，
+                //    从外面看 BackSide 的球是"透明"的 → 背景纯黑。
+                //    跟着相机走，相机永远在球心，永远看到内表面。
+                //    这也是所有 FPS / 开放世界游戏的标准做法。
+                if (sky) {{
+                    sky.position.copy(camera.position);
+                }}
 
                 // 🔥 思索教学进行中：主场景降频为静默背景（保留渲染，避免黑屏）
                 //    跳过日光巡游 / 粒子 / 呼吸灯等全部重计算，把 GPU 让给教学沙盒。
@@ -10573,10 +11773,16 @@ def generate_scene_html():
             
             function updateBeaconVisibility() {{
                 objectMeshes.forEach(group => {{
-                    if (!group.userData || !group.userData.visualLayer) return;
-                    group.userData.visualLayer.traverse(child => {{
-                        if (child.userData.isBeacon) child.visible = beaconEnabled;
-                    }});
+                    // 🔥 路径 1：逐物体渲染（小场景）
+                    if (group.userData && group.userData.visualLayer) {{
+                        group.userData.visualLayer.traverse(child => {{
+                            if (child.userData.isBeacon) child.visible = beaconEnabled;
+                        }});
+                    }}
+                    // 🔥 路径 2：实例化渲染（深圳场景）—— 光柱是独立 InstancedMesh
+                    if (group.userData && group.userData.beamMesh) {{
+                        group.userData.beamMesh.visible = beaconEnabled;
+                    }}
                 }});
             }}
             
@@ -10778,8 +11984,51 @@ def generate_scene_html():
             function applyHighLoadHighlight(on) {{
                 const th = getAlertThreshold();
                 let n = 0;
+
                 objectMeshes.forEach(g => {{
-                    if (g.isInstancedMesh || !g.userData || !g.userData.objectId) return;
+                    // ============================================================
+                    // 🔥 路径 1：实例化充电桩（深圳场景）
+                    //    InstancedMesh 无法逐实例改 scale，但可以逐实例改颜色。
+                    //    高亮 = 高负载实例刷成黄色，其余按利用率恢复原色。
+                    // ============================================================
+                    if (g.isInstancedMesh && g.userData
+                        && g.userData.type && g.userData.type.startsWith('charger')) {{
+                        const data = g.userData.instanceData;
+                        if (!data) return;
+                        const color = new THREE.Color();
+                        let changed = false;
+
+                        for (let i = 0; i < data.length; i++) {{
+                            const util = data[i].utilization || 0.5;
+                            if (on && util > th) {{
+                                // 高亮：亮黄
+                                color.setHSL(0.12, 1.0, 0.55);
+                                n++;
+                            }} else {{
+                                // 恢复：按利用率正常上色
+                                const hue = 0.6 - util * 0.6;
+                                color.setHSL(hue, 0.9, 0.5);
+                            }}
+                            g.setColorAt(i, color);
+                            if (g.userData.ringMesh) g.userData.ringMesh.setColorAt(i, color);
+                            if (g.userData.beamMesh) g.userData.beamMesh.setColorAt(i, color);
+                            changed = true;
+                        }}
+
+                        if (changed) {{
+                            if (g.instanceColor) g.instanceColor.needsUpdate = true;
+                            if (g.userData.ringMesh && g.userData.ringMesh.instanceColor)
+                                g.userData.ringMesh.instanceColor.needsUpdate = true;
+                            if (g.userData.beamMesh && g.userData.beamMesh.instanceColor)
+                                g.userData.beamMesh.instanceColor.needsUpdate = true;
+                        }}
+                        return;
+                    }}
+
+                    // ============================================================
+                    // 🔥 路径 2：逐物体渲染（小场景）
+                    // ============================================================
+                    if (!g.userData || !g.userData.objectId) return;
                     if (on) {{
                         const obj = objects.find(o => o.id === g.userData.objectId);
                         if (obj && (obj.utilization || 0) > th) {{
@@ -10804,11 +12053,25 @@ def generate_scene_html():
                 }});
             }}
 
-            // 视角预设（坐标与原指令一致；侧视 / 低角度 / 默认视角按计划舍弃）
+            // 🔥 视角预设：基于场景规模自适应
+            //    原先硬编码 (12,10,15) 那种是几十单位小场景的坐标，
+            //    放到 726×454 的城市尺度下，相机贴在地面上当然看不到全城。
+            //    这里改成按 _sceneRadius 反算距离，小场景不变，大场景自动拉远。
+            const R = Math.max(_sceneRadius, 12);
+            const C = _sceneCenter;
             const VIEW_PRESETS = {{
-                reset:   [[12, 10, 15], [0, 1.5, 0]],
-                pano:    [[0, 25, 20],  [0, 0, 0]],
-                closeup: [[8, 5, 8],    [0, 1, 0]],
+                reset: [
+                    [C.x + R * 0.55, R * 0.55, C.z + R * 0.70],
+                    [C.x, 1.5, C.z],
+                ],
+                pano: [
+                    [C.x, R * 1.8, C.z + R * 0.35],
+                    [C.x, 0, C.z],
+                ],
+                closeup: [
+                    [C.x + R * 0.25, R * 0.20, C.z + R * 0.30],
+                    [C.x, R * 0.05, C.z],
+                ],
             }};
             Object.keys(VIEW_PRESETS).forEach(key => {{
                 const btn = document.getElementById('view-' + key + '-btn');
@@ -11111,7 +12374,67 @@ def generate_scene_html():
                     const step = Math.max(0, Math.min(stepIndex, maxSteps - 1));
                     const utils = timelineData.matrix[step] || [];
 
+                    // 🔥 修复：分两趟 —— 实例化充电桩批量刷色，逐物体渲染的走视觉更新
+                    //    （原来这一趟对 InstancedMesh 直接 return，时间轴回放在深圳场景下对充电桩无效）
+
+                    // 第 1 趟：实例化充电桩（大场景主路径）
+                    objectMeshes.forEach(mesh => {{
+                        if (!mesh.isInstancedMesh) return;
+                        if (!mesh.userData || !mesh.userData.type) return;
+                        if (!mesh.userData.type.startsWith('charger')) return;
+                        const data = mesh.userData.instanceData;
+                        if (!data) return;
+
+                        const color = new THREE.Color();
+                        let changed = false;
+                        for (let i = 0; i < data.length; i++) {{
+                            const inst = data[i];
+                            const sid = String(inst.bind_station_id || '');
+                            let util = null;
+
+                            if (sid && stationIndexMap[sid] !== undefined) {{
+                                util = utils[stationIndexMap[sid]];
+                            }}
+                            if (util === null || util === undefined) {{
+                                util = inst.utilization || 0.5;
+                            }}
+
+                            const hue = 0.6 - util * 0.6;
+                            color.setHSL(hue, 0.9, 0.5);
+                            mesh.setColorAt(i, color);
+                            inst.utilization = util;
+
+                            // 🔥 同步刷兄弟 mesh（光柱是这次新增的）
+                            const ringMesh = mesh.userData.ringMesh;
+                            const ledMesh  = mesh.userData.ledMesh;
+                            const beamMesh = mesh.userData.beamMesh;
+                            if (ringMesh) ringMesh.setColorAt(i, color);
+                            if (ledMesh)  ledMesh.setColorAt(i, new THREE.Color(0xfff5cc));
+                            if (beamMesh) beamMesh.setColorAt(i, color);
+                            changed = true;
+                        }}
+
+                        if (changed) {{
+                            if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+                            const ringMesh = mesh.userData.ringMesh;
+                            const ledMesh  = mesh.userData.ledMesh;
+                            const beamMesh = mesh.userData.beamMesh;
+                            if (ringMesh && ringMesh.instanceColor) ringMesh.instanceColor.needsUpdate = true;
+                            if (ledMesh && ledMesh.instanceColor)  ledMesh.instanceColor.needsUpdate = true;
+                            if (beamMesh && beamMesh.instanceColor) beamMesh.instanceColor.needsUpdate = true;
+                        }}
+                        if (changed) {{
+                            if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+                            const ringMesh = mesh.userData.ringMesh;
+                            const ledMesh  = mesh.userData.ledMesh;
+                            if (ringMesh && ringMesh.instanceColor) ringMesh.instanceColor.needsUpdate = true;
+                            if (ledMesh && ledMesh.instanceColor)  ledMesh.instanceColor.needsUpdate = true;
+                        }}
+                    }});
+
+                    // 第 2 趟：逐物体渲染的充电桩（小场景路径）
                     objectMeshes.forEach(group => {{
+                        if (group.isInstancedMesh) return;   // 已在第 1 趟处理
                         if (!group.userData || !group.userData.objectId) return;
                         const objData = objects.find(o => o.id === group.userData.objectId);
                         if (!objData) return;
@@ -11122,17 +12445,38 @@ def generate_scene_html():
                         if (sid && stationIndexMap[sid] !== undefined) {{
                             util = utils[stationIndexMap[sid]];
                         }}
-
                         if (util === null || util === undefined) {{
-                            // 未绑定：保持原值
                             util = objData.utilization || 0.5;
                         }}
 
-                        // 调用现有的视觉更新函数
                         updateChargerVisual(group, util);
                     }});
+                    
+                    // 🔥 时间轴告警：每帧只对最严重的 1 个站点弹
+                    //    为什么只弹 1 个：1423 个站点里可能有几百个超阈值，
+                    //    一次弹几百个会刷屏。只弹"最严重的那个"已经足够起到提示作用。
+                    //    同一站点 30 秒冷却由 showAlert 内部的 ALERT_COOLDOWN 保证，
+                    //    所以连续播 200 帧也不会重复弹同一个站点。
+                    let worstSid = null;
+                    let worstUtil = 0;
+                    objectMeshes.forEach(function(mesh) {{
+                        if (!mesh.isInstancedMesh) return;
+                        if (!mesh.userData || !mesh.userData.type) return;
+                        if (!mesh.userData.type.startsWith('charger')) return;
+                        const data = mesh.userData.instanceData;
+                        if (!data) return;
+                        for (let i = 0; i < data.length; i++) {{
+                            const u = data[i].utilization || 0;
+                            if (u > worstUtil) {{
+                                worstUtil = u;
+                                worstSid = String(data[i].bind_station_id || '');
+                            }}
+                        }}
+                    }});
+                    if (worstSid && worstUtil > getAlertThreshold()) {{
+                        showAlert(worstSid, worstUtil, worstSid);
+                    }}
 
-                    // 更新 UI
                     timelineTime.textContent = timelineData.timeline[step] || '--';
                     timelineStep.textContent = step + ' / ' + (maxSteps - 1);
                     timelineSlider.value = step;
@@ -11242,6 +12586,612 @@ def generate_scene_html():
                         restoreRealtime();
                     }}
                 }};
+            }})();
+            
+            // ============================================================
+            // 🔮 预测图层（未来 12h）
+            // ------------------------------------------------------------
+            // 设计要点：
+            //   · 模型只输出单点（12h 后），不是 12 步。所以不做"预测段滑块"，
+            //     只做"预测图层开关"——一键切换全部充电桩的颜色。
+            //   · 配色：固定青色（色相 0.5），亮度随预测值。
+            //     历史/实时是 绿→黄→红（色相 0.6→0.0）。
+            //     青色与红黄系拉开，一眼区分"已发生" vs "将发生"。
+            //   · 互斥：打开预测时，关闭时间轴/自动导览/导览编辑。
+            // ============================================================
+            (function initPredictionLayer() {{
+                const preds = sceneData.predictions || {{}};
+                const btn = document.getElementById('prediction-btn');
+                const badge = document.getElementById('prediction-badge');
+
+                if (!btn) return;
+
+                if (Object.keys(preds).length === 0) {{
+                    console.log('ℹ️ 预测图层：无预测数据，按钮隐藏');
+                    return;
+                }}
+
+                console.log(`🔮 预测图层已就绪：${{Object.keys(preds).length}} 个站点`);
+
+                let predictionMode = false;
+                // 保存进入预测前的状态（用于退出时恢复）
+                let savedStepIndex = 0;
+
+                // ===== 刷色 + 高度 + 粗细 =====
+                function applyPredictionColors() {{
+                    // 🔥 先算 Top 20% 阈值
+                    //    为什么：预测值均值只有 0.217，全体渐变会一片糊。
+                    //    Top 20% 挑出来"炸"，其余压暗 —— 焦点明确，一眼看出
+                    //    哪些站点将来会爆。
+                    const allVals = Object.values(preds)
+                        .filter(v => typeof v === 'number' && isFinite(v))
+                        .sort((a, b) => b - a);
+                    const topN = Math.max(1, Math.floor(allVals.length * 0.2));
+                    const threshold = allVals[topN - 1] || 0.7;
+                    console.log(`🔮 Top 20% 阈值: ${{threshold.toFixed(3)}} (Top ${{topN}} 个)`);
+
+                    let hit = 0, dim = 0, miss = 0;
+                    const color = new THREE.Color();
+                    const beamColor = new THREE.Color();
+                    const dummyBeam = new THREE.Object3D();
+
+                    objectMeshes.forEach(mesh => {{
+                        if (!mesh.isInstancedMesh) return;
+                        if (!mesh.userData || !mesh.userData.type) return;
+                        if (!mesh.userData.type.startsWith('charger')) return;
+
+                        const data = mesh.userData.instanceData;
+                        if (!data) return;
+
+                        const beamMesh = mesh.userData.beamMesh;
+                        const cfg = beamMesh && beamMesh.userData.beamConfig;
+
+                        for (let i = 0; i < data.length; i++) {{
+                            const sid = String(data[i].bind_station_id || '');
+                            const pv = preds[sid];
+                            const hasPred = (pv !== undefined && pv !== null && isFinite(pv));
+
+                            if (!hasPred) {{
+                                // 未绑定：按利用率正常色（保持灰暗）
+                                const util = data[i].utilization || 0.5;
+                                color.setHSL(0.6 - util * 0.6, 0.9, 0.5);
+                                beamColor.copy(color);
+                                miss++;
+                            }} else if (pv >= threshold) {{
+                                // 🔥 Top 20%：亮白青（几乎发光）
+                                color.setHSL(0.5, 0.95, 0.88);
+                                beamColor.setHSL(0.5, 1.0, 0.92);
+                                hit++;
+                            }} else {{
+                                // 🔥 其余 80%：压暗低饱和青
+                                color.setHSL(0.5, 0.35, 0.25);
+                                beamColor.setHSL(0.5, 0.5, 0.32);
+                                dim++;
+                            }}
+
+                            mesh.setColorAt(i, color);
+                            if (mesh.userData.ringMesh) mesh.userData.ringMesh.setColorAt(i, color);
+
+                            // 🔥 光柱：颜色 + 高度 + 粗细
+                            if (beamMesh && cfg) {{
+                                beamMesh.setColorAt(i, beamColor);
+
+                                const pvSafe = hasPred ? pv : 0.5;
+                                // 高度：1.5m（低）→ 13.5m（高）
+                                const targetH = 1.5 + pvSafe * 12.0;
+                                // 粗细：0.5（细）→ 2.0（粗）
+                                const targetW = 0.5 + pvSafe * 1.5;
+
+                                const pos = data[i].position;
+                                const sc = data[i].scale || {{ x: 1, y: 1, z: 1 }};
+                                const scaleY = targetH / cfg.h;
+                                const scaleXZ = targetW / cfg.w;
+
+                                dummyBeam.position.set(pos.x, (pos.y || 0) + cfg.top, pos.z);
+                                dummyBeam.scale.set(sc.x * scaleXZ, scaleY, sc.z * scaleXZ);
+                                dummyBeam.rotation.set(0, 0, 0);
+                                dummyBeam.updateMatrix();
+                                beamMesh.setMatrixAt(i, dummyBeam.matrix);
+                            }}
+
+                            // LED 保持暖白
+                            if (mesh.userData.ledMesh)
+                                mesh.userData.ledMesh.setColorAt(i, new THREE.Color(0xfff5cc));
+                        }}
+
+                        // 标记更新
+                        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+                        if (mesh.userData.ringMesh && mesh.userData.ringMesh.instanceColor)
+                            mesh.userData.ringMesh.instanceColor.needsUpdate = true;
+                        if (beamMesh) {{
+                            if (beamMesh.instanceColor) beamMesh.instanceColor.needsUpdate = true;
+                            beamMesh.instanceMatrix.needsUpdate = true;
+                        }}
+                        if (mesh.userData.ledMesh && mesh.userData.ledMesh.instanceColor)
+                            mesh.userData.ledMesh.instanceColor.needsUpdate = true;
+                    }});
+
+                    console.log(`🔮 预测图层：高亮 ${{hit}} · 压暗 ${{dim}} · 未绑定 ${{miss}}`);
+                    return hit;
+                }}
+
+                // ===== 恢复实时/历史色 + 光柱矩阵 =====
+                function restoreNormalColors() {{
+                    const color = new THREE.Color();
+                    const dummyBeam = new THREE.Object3D();
+
+                    objectMeshes.forEach(mesh => {{
+                        if (!mesh.isInstancedMesh) return;
+                        if (!mesh.userData || !mesh.userData.type) return;
+                        if (!mesh.userData.type.startsWith('charger')) return;
+
+                        const data = mesh.userData.instanceData;
+                        if (!data) return;
+
+                        const beamMesh = mesh.userData.beamMesh;
+                        const cfg = beamMesh && beamMesh.userData.beamConfig;
+
+                        for (let i = 0; i < data.length; i++) {{
+                            const util = data[i].utilization || 0.5;
+                            color.setHSL(0.6 - util * 0.6, 0.9, 0.5);
+                            mesh.setColorAt(i, color);
+                            if (mesh.userData.ringMesh) mesh.userData.ringMesh.setColorAt(i, color);
+
+                            // 🔥 光柱颜色 + 矩阵一起恢复
+                            if (beamMesh && cfg) {{
+                                beamMesh.setColorAt(i, color);
+                                const pos = data[i].position;
+                                const sc = data[i].scale || {{ x: 1, y: 1, z: 1 }};
+                                dummyBeam.position.set(pos.x, (pos.y || 0) + cfg.top, pos.z);
+                                dummyBeam.scale.set(sc.x, sc.y, sc.z);   // 原始 scale
+                                dummyBeam.rotation.set(0, 0, 0);
+                                dummyBeam.updateMatrix();
+                                beamMesh.setMatrixAt(i, dummyBeam.matrix);
+                            }}
+
+                            if (mesh.userData.ledMesh)
+                                mesh.userData.ledMesh.setColorAt(i, new THREE.Color(0xfff5cc));
+                        }}
+
+                        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+                        if (mesh.userData.ringMesh && mesh.userData.ringMesh.instanceColor)
+                            mesh.userData.ringMesh.instanceColor.needsUpdate = true;
+                        if (beamMesh) {{
+                            if (beamMesh.instanceColor) beamMesh.instanceColor.needsUpdate = true;
+                            beamMesh.instanceMatrix.needsUpdate = true;
+                        }}
+                        if (mesh.userData.ledMesh && mesh.userData.ledMesh.instanceColor)
+                            mesh.userData.ledMesh.instanceColor.needsUpdate = true;
+                    }});
+
+                    console.log('🔮 已恢复实时/历史状态');
+                }}
+
+                // ===== 进入预测模式 =====
+                function enterPrediction() {{
+                    // 🔥 互斥 1：关闭时间轴
+                    const tlPanel = document.getElementById('timeline-panel');
+                    const tlClose = document.getElementById('timeline-close');
+                    if (tlPanel && tlPanel.style.display === 'block' && tlClose) {{
+                        tlClose.click();
+                    }}
+                    // 🔥 互斥 2：停止自动导览
+                    const tourBtnEl = document.getElementById('tour-btn');
+                    if (tourBtnEl && tourBtnEl.classList.contains('active')) {{
+                        tourBtnEl.click();
+                    }}
+                    // 🔥 互斥 3：关闭导览编辑
+                    const editPanel = document.getElementById('tour-editor');
+                    const editClose = document.getElementById('tour-editor-close');
+                    if (editPanel && editPanel.classList.contains('visible') && editClose) {{
+                        editClose.click();
+                    }}
+
+                    predictionMode = true;
+                    btn.classList.add('active');
+                    badge.classList.add('visible');
+                    controls.autoRotate = false;
+
+                    applyPredictionColors();
+                    console.log('🔮 已进入预测图层');
+                }}
+
+                // ===== 退出预测模式 =====
+                function exitPrediction() {{
+                    predictionMode = false;
+                    btn.classList.remove('active');
+                    badge.classList.remove('visible');
+                    restoreNormalColors();
+                    console.log('🔮 已退出预测图层');
+                }}
+
+                btn.addEventListener('click', () => {{
+                    if (predictionMode) exitPrediction();
+                    else enterPrediction();
+                }});
+
+                // 暴露给其他模块（时间轴打开时自动退出预测）
+                window.__exitPrediction__ = exitPrediction;
+                window.__isInPrediction__ = () => predictionMode;
+
+                // 🔥 时间轴打开时自动退出预测（互斥的对称实现）
+                const tlOpenBtn = document.getElementById('timeline-open-btn');
+                if (tlOpenBtn) {{
+                    tlOpenBtn.addEventListener('click', () => {{
+                        if (predictionMode && tlOpenBtn.classList.contains('active')) {{
+                            // 时间轴正在打开
+                            exitPrediction();
+                        }}
+                    }});
+                }}
+            }})();
+            
+            // ============================================================
+            // 🎬 一键演示（可随时中止）
+            // ------------------------------------------------------------
+            // 设计要点：
+            //   · 5 步叙事：全景 → 历史回放 → 预测 → 语音 → 收尾
+            //   · 全程可中止：ESC / "停止"按钮 / 再点主按钮
+            //   · 中止时自动清场：关时间轴、退预测、停语音、恢复自动旋转
+            //   · 用"可中断 sleep"而不是 setTimeout —— 后者无法中途取消
+            // ============================================================
+            (function initDemo() {{
+                const demoBtn = document.getElementById('demo-btn');
+                const stopBtn = document.getElementById('demo-stop-btn');
+                const progress = document.getElementById('demo-progress');
+                if (!demoBtn) return;
+
+                let demoRunning = false;
+                let demoAbort = false;
+
+                // 有场景就显示按钮
+                demoBtn.classList.add('visible');
+
+                // ===== 可中断 sleep =====
+                function sleep(ms) {{
+                    return new Promise(resolve => {{
+                        const start = Date.now();
+                        const check = () => {{
+                            if (demoAbort) return resolve();
+                            if (Date.now() - start >= ms) return resolve();
+                            requestAnimationFrame(check);
+                        }};
+                        check();
+                    }});
+                }}
+
+                function setProgress(pct) {{
+                    progress.style.width = pct + '%';
+                    progress.classList.add('visible');
+                }}
+
+                // ===== 相机平滑飞行 =====
+                function flyTo(pos, target, duration) {{
+                    duration = duration || 2000;
+                    return new Promise(resolve => {{
+                        const startPos = camera.position.clone();
+                        const startTarget = controls.target.clone();
+                        const endPos = new THREE.Vector3(pos[0], pos[1], pos[2]);
+                        const endTarget = new THREE.Vector3(target[0], target[1], target[2]);
+                        const t0 = performance.now();
+                        function step() {{
+                            if (demoAbort) return resolve();
+                            const t = Math.min((performance.now() - t0) / duration, 1);
+                            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                            camera.position.lerpVectors(startPos, endPos, ease);
+                            controls.target.lerpVectors(startTarget, endTarget, ease);
+                            if (t < 1) requestAnimationFrame(step);
+                            else resolve();
+                        }}
+                        step();
+                    }});
+                }}
+            
+                // 🔥 决策卡片：3D 场景里浮一个"当前 vs 预测"对比
+                function showDecisionCard(stationId, currentUtil, predUtil) {{
+                    let card = document.getElementById('decision-card');
+                    if (!card) {{
+                        card = document.createElement('div');
+                        card.id = 'decision-card';
+                        card.style.cssText = `
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%) scale(0.9);
+                            background: rgba(10, 14, 23, 0.95);
+                            backdrop-filter: blur(20px);
+                            border: 1px solid var(--color-accent);
+                            border-radius: 20px;
+                            padding: 24px 36px;
+                            color: #eef2ff;
+                            font-family: var(--font-main);
+                            z-index: 500;
+                            box-shadow: 0 20px 80px rgba(var(--color-accent-rgb), 0.3),
+                                        0 0 120px rgba(var(--color-accent-rgb), 0.1);
+                            opacity: 0;
+                            transition: opacity 0.4s ease, transform 0.4s ease;
+                            min-width: 320px;
+                        `;
+                        document.body.appendChild(card);
+                    }}
+
+                    const delta = predUtil - currentUtil;
+                    const deltaColor = delta > 0 ? 'var(--color-danger)' : 'var(--color-success)';
+                    const deltaSign = delta > 0 ? '▲' : '▼';
+                    const advice = predUtil > 0.7 ? '🔴 建议：立即扩容' :
+                                   predUtil > 0.5 ? '🟡 建议：关注排队情况' :
+                                   '🟢 运行平稳';
+
+                    card.innerHTML = `
+                        <div style="font-size: 12px; color: #8899bb; letter-spacing: 0.1em;
+                                    margin-bottom: 16px; text-transform: uppercase;">
+                            📊 决策建议 · 站点 ${{stationId}}
+                        </div>
+                        <div style="display: flex; justify-content: space-between;
+                                    align-items: baseline; margin-bottom: 12px;">
+                            <span style="color: #8899bb; font-size: 14px;">当前利用率</span>
+                            <span style="color: #88ccff; font-size: 28px; font-weight: 700;">
+                                ${{(currentUtil * 100).toFixed(0)}}%
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;
+                                    align-items: baseline; margin-bottom: 16px;">
+                            <span style="color: #8899bb; font-size: 14px;">预测 12h 后</span>
+                            <span style="color: var(--color-accent); font-size: 28px; font-weight: 700;">
+                                ${{(predUtil * 100).toFixed(0)}}%
+                            </span>
+                        </div>
+                        <div style="text-align: center; padding: 10px;
+                                    background: rgba(var(--color-accent-rgb), 0.08);
+                                    border-radius: 12px; margin-bottom: 16px;">
+                            <span style="color: ${{deltaColor}}; font-size: 20px; font-weight: 700;">
+                                ${{deltaSign}} ${{Math.abs(delta * 100).toFixed(0)}}%
+                            </span>
+                        </div>
+                        <div style="text-align: center; font-size: 14px; font-weight: 600;
+                                    color: #eef2ff; letter-spacing: 0.03em;">
+                            ${{advice}}
+                        </div>
+                    `;
+
+                    requestAnimationFrame(() => {{
+                        card.style.opacity = '1';
+                        card.style.transform = 'translate(-50%, -50%) scale(1)';
+                    }});
+                }}
+
+                function hideDecisionCard() {{
+                    const card = document.getElementById('decision-card');
+                    if (card) {{
+                        card.style.opacity = '0';
+                        card.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                        setTimeout(() => card.remove(), 400);
+                    }}
+                }}
+                
+                // 🔥 碳效益条：底部滑上来的横向条
+                function showCarbonBar() {{
+                    // 从 Python 传入的碳排放数据
+                    // 如果没有现成的，用前端算法估算
+                    const chargers = objects.filter(o =>
+                        o.type && o.type.startsWith('charger'));
+                    const totalChargers = chargers.length;
+
+                    // 粗算：每桩日均 50 度、年 365 天、每度减排 0.6 kg
+                    const annualKWh = totalChargers * 50 * 365;
+                    const co2Tons = Math.round(annualKWh * 0.6 / 1000);
+                    const trees = Math.round(co2Tons * 1000 / 21.77);
+                    const kmWan = Math.round(annualKWh * 5 / 10000);
+
+                    let bar = document.getElementById('carbon-bar');
+                    if (!bar) {{
+                        bar = document.createElement('div');
+                        bar.id = 'carbon-bar';
+                        bar.style.cssText = `
+                            position: absolute;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                            padding: 20px 40px;
+                            background: linear-gradient(90deg,
+                                rgba(var(--color-success-rgb), 0.15),
+                                rgba(var(--color-success-rgb), 0.25),
+                                rgba(var(--color-success-rgb), 0.15));
+                            backdrop-filter: blur(20px);
+                            border-top: 1px solid rgba(var(--color-success-rgb), 0.4);
+                            color: var(--color-text-1);
+                            font-family: var(--font-main);
+                            font-size: 18px;
+                            font-weight: 600;
+                            z-index: 500;
+                            text-align: center;
+                            transform: translateY(100%);
+                            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                            box-shadow: 0 -10px 60px rgba(var(--color-success-rgb), 0.2);
+                        `;
+                        document.body.appendChild(bar);
+                    }}
+
+                    bar.innerHTML = `
+                        <span style="color: var(--color-success); font-size: 22px;">🌿</span>
+                        年碳减排 <span style="color: var(--color-success); font-size: 26px; font-weight: 800;">${{co2Tons.toLocaleString()}}</span> 吨 CO₂
+                        <span style="color: #445; margin: 0 20px;">·</span>
+                        <span style="color: var(--color-success); font-size: 22px;">🌳</span>
+                        等效植树 <span style="color: var(--color-success); font-size: 26px; font-weight: 800;">${{trees.toLocaleString()}}</span> 棵
+                        <span style="color: #445; margin: 0 20px;">·</span>
+                        <span style="color: var(--color-success); font-size: 22px;">🚗</span>
+                        替代燃油车 <span style="color: var(--color-success); font-size: 26px; font-weight: 800;">${{kmWan.toLocaleString()}}</span> 万公里
+                    `;
+
+                    requestAnimationFrame(() => {{
+                        bar.style.transform = 'translateY(0)';
+                    }});
+                    return bar;
+                }}
+
+                function hideCarbonBar() {{
+                    const bar = document.getElementById('carbon-bar');
+                    if (bar) {{
+                        bar.style.transform = 'translateY(100%)';
+                        setTimeout(() => bar.remove(), 500);
+                    }}
+                }}
+
+                // ===== 清场 =====
+                function cleanup() {{
+                    hideDecisionCard();
+                    hideCarbonBar(); 
+                    const tlClose = document.getElementById('timeline-close');
+                    const tlPanel = document.getElementById('timeline-panel');
+                    if (tlClose && tlPanel && tlPanel.style.display === 'block') tlClose.click();
+
+                    if (window.__isInPrediction__ && window.__isInPrediction__()) {{
+                        window.__exitPrediction__();
+                    }}
+
+                    if (window.speechSynthesis) window.speechSynthesis.cancel();
+                    if (controls) controls.autoRotate = true;
+
+                    stopBtn.classList.remove('visible');
+                    progress.classList.remove('visible');
+                    demoBtn.classList.remove('running');
+                    demoBtn.textContent = '▶️ 一键演示';
+                    demoRunning = false;
+                    demoAbort = false;
+                    console.log('🎬 演示已结束/中止');
+                }}
+
+                // ===== 主流程 =====
+                async function runDemo() {{
+                    if (demoRunning) {{
+                        demoAbort = true;
+                        return;
+                    }}
+                    demoRunning = true;
+                    demoAbort = false;
+                    demoBtn.classList.add('running');
+                    demoBtn.textContent = '⏹ 演示中...';
+                    stopBtn.classList.add('visible');
+                    setProgress(2);
+                    if (controls) controls.autoRotate = false;
+
+                    const R = Math.max(_sceneRadius, 12);
+                    const C = _sceneCenter;
+
+                    try {{
+                        // ===== Step 1: 全景俯瞰 =====
+                        await flyTo(
+                            [C.x + R * 0.6, R * 1.5, C.z + R * 0.6],
+                            [C.x, 0, C.z],
+                            2500
+                        );
+                        if (demoAbort) return;
+                        controls.autoRotate = true;
+                        setProgress(8);
+                        await sleep(3000);
+                        if (demoAbort) return;
+                        controls.autoRotate = false;
+                        setProgress(12);
+
+                        // ===== Step 2: 历史回放 =====
+                        await flyTo(
+                            [C.x, R * 1.2, C.z + R * 0.4],
+                            [C.x, 0, C.z],
+                            1500
+                        );
+                        if (demoAbort) return;
+
+                        const tlOpenBtn = document.getElementById('timeline-open-btn');
+                        const tlPlayBtn = document.getElementById('timeline-play');
+                        if (tlOpenBtn && tlOpenBtn.style.display !== 'none') {{
+                            tlOpenBtn.click();
+                            await sleep(800);
+                            if (demoAbort) return;
+                            if (tlPlayBtn) tlPlayBtn.click();
+                            setProgress(20);
+                            await sleep(8000);
+                            if (demoAbort) return;
+                            setProgress(35);
+                            await sleep(6000);
+                            if (demoAbort) return;
+                            if (tlPlayBtn && tlPlayBtn.classList.contains('playing')) tlPlayBtn.click();
+                            setProgress(50);
+                            await sleep(800);
+                            if (demoAbort) return;
+                        }}
+
+                        // ===== Step 3: 预测图层 =====
+                        const predBtn = document.getElementById('prediction-btn');
+                        if (predBtn && predBtn.style.display !== 'none') {{
+                            predBtn.click();
+                            setProgress(60);
+                            await flyTo(
+                                [C.x + R * 0.3, R * 0.5, C.z + R * 0.5],
+                                [C.x, 0, C.z],
+                                2000
+                            );
+                            if (demoAbort) return;
+                            setProgress(75);
+                            await sleep(5000);
+                            if (demoAbort) return;
+                        }}
+                        
+                        // ===== Step 3.5: 决策卡片 =====
+                        // 挑一个预测值最高的站点，弹出对比卡片
+                        const preds = sceneData.predictions || {{}};
+                        const entries = Object.entries(preds)
+                            .filter(([_, v]) => typeof v === 'number')
+                            .sort((a, b) => b[1] - a[1]);
+                        
+                        if (entries.length > 0) {{
+                            const [topSid, topPred] = entries[0];
+                            const obj = objects.find(o => String(o.bind_station_id) === String(topSid));
+                            const curUtil = obj ? (obj.utilization || 0) : 0;
+                            
+                            showDecisionCard(topSid, curUtil, topPred);
+                            setProgress(72);
+                            await sleep(4500);
+                            if (demoAbort) {{ hideDecisionCard(); return; }}
+                        }}
+
+                        // ===== Step 4: 语音播报 =====
+                        if (typeof speakText === 'function' && typeof buildSceneReport === 'function') {{
+                            speakText(buildSceneReport());
+                            setProgress(85);
+                            await sleep(8000);
+                            if (demoAbort) return;
+                        }}
+                        
+                        // ===== Step 4.5: 碳效益条 =====
+                        const carbonBar = showCarbonBar();
+                        setProgress(90);
+                        await sleep(5000);
+                        if (demoAbort) {{ hideCarbonBar(); return; }}
+
+                        // ===== Step 5: 收尾 =====
+                        if (window.__isInPrediction__ && window.__isInPrediction__()) {{
+                            window.__exitPrediction__();
+                        }}
+                        await flyTo(
+                            [C.x, R * 2.2, C.z + R * 0.3],
+                            [C.x, 0, C.z],
+                            2500
+                        );
+                        setProgress(100);
+                        await sleep(1500);
+
+                    }} finally {{
+                        cleanup();
+                    }}
+                }}
+
+                demoBtn.addEventListener('click', runDemo);
+                stopBtn.addEventListener('click', () => {{ demoAbort = true; }});
+                window.addEventListener('keydown', e => {{
+                    if (e.key === 'Escape' && demoRunning) demoAbort = true;
+                }});
+
+                console.log('🎬 一键演示已就绪');
             }})();
             
             // ===== 任务6：开发者选项 =====
@@ -11368,6 +13318,174 @@ def generate_scene_html():
     return _inject_ponder(html)
 
 
+def _scene_fingerprint() -> str:
+    """场景内容的指纹，用于判断是否需要重建场景 HTML。
+
+    为什么需要它（性能）：
+        场景 HTML 每次 rerun 都要重建并重新下发 —— 点选物体、切左侧面板、
+        改属性，全都是 rerun。但其中绝大多数 rerun 并没有改动场景本身。
+        用一个指纹判断"场景没变"，就能直接复用上次的 HTML。
+
+    ⚠️ 但指纹本身也要花时间，而且实测随实体数明显增长：
+           1436 个实体 ->  29 ms
+           6930 个实体 -> 312 ms     ← 每次交互都要付这个代价
+        这是本项目「操作卡顿」的主因之一（而且是引入缓存时无意造成的）。
+
+    优化：加一层"廉价快速路径"。
+        · 绝大多数交互（点选/切面板/改属性）不会替换 scene_objects 这个
+          列表对象本身，只是读它或改某个元素。
+        · 所以先比对「列表对象 id + 长度」—— 与上次相同时直接复用上次算好的
+          指纹，跳过几百毫秒的全量序列化。
+        · 只有场景真的被替换/增删（列表对象变了或长度变了）才走完整计算。
+
+    注意：指纹必须覆盖**所有影响渲染的字段**（位置/尺寸/颜色/利用率等），
+    所以完整路径仍是对 objects 全量序列化做哈希，不用采样或计数
+    —— 列表内元素的原地修改由调用方通过 `mark_scene_changed()` 显式失效。
+    """
+    import hashlib as _hl
+
+    objs = st.session_state.get('scene_objects', []) or []
+    ident = (id(objs), len(objs))
+    style = st.session_state.get('current_style', '')
+    story = st.session_state.get('current_story')
+    scene_id = st.session_state.get('scene_id')
+    bg = st.session_state.get('_bg_override')
+
+    # ⚠️ 故意**不**把 selected_object_id 放进指纹。
+    #    踩过的坑：曾经把它算进去，结果**每次选中物体都会让缓存失效** →
+    #    重建约 470 KB 的 HTML + 重挂 iframe。而选中是高频操作，
+    #    于是页面反复重建（表现为卡顿、iframe 迟迟出不来）。
+    #    而且注入的 selectedId 是模块初始化时的 const，只在首次加载被读一次，
+    #    后续选中本来就由前端自行处理（objectMeshes 里按 objectId 查找）。
+    cheap = (ident, style, story, scene_id, bg)
+
+    cache = st.session_state.get('_fp_cache')
+    if cache and cache[0] == cheap and cache[1]:
+        return cache[1]
+
+    payload = {
+        'objects': objs,
+        'style': style,
+        'story': story,
+        'scene_id': scene_id,
+        'bg': bg,
+    }
+    blob = json.dumps(payload, ensure_ascii=False, separators=(',', ':'),
+                      sort_keys=True, default=str)
+    fp = _hl.md5(blob.encode('utf-8')).hexdigest()
+    st.session_state['_fp_cache'] = (cheap, fp)
+    return fp
+
+
+def mark_scene_changed():
+    """显式让场景 HTML 缓存失效（就地修改了 objects 里的某个元素时调用）。
+
+    为什么需要：_scene_fingerprint 的快速路径只比对列表对象与长度，
+    原地改某个物体的坐标不会改变这两者。凡是**就地修改**物体的地方
+    都应调用本函数，否则界面不会更新。
+    """
+    st.session_state.pop('_fp_cache', None)
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def _cached_scene_html(fingerprint: str) -> str:
+    """按场景指纹缓存场景 HTML。
+
+    ⚠️ 参数名**不能**以 `_` 开头！
+       我第一版写成 `_fingerprint`，结果缓存永远命中第一次的结果（改了场景
+       也不更新）。原因是 Streamlit 的语义：**以 `_` 开头的形参会被排除在
+       缓存键之外**（见 streamlit/runtime/caching/cache_utils.py:949
+       「Not hashing %s because it starts with _」）。
+       我原以为 `_` 前缀是"跳过哈希开销"，实际是"不参与缓存键"——
+       两个完全不同的意思。
+
+    指纹本身已经是一个很短的 md5 字符串，让 Streamlit 再哈希它的代价可以忽略；
+    真正昂贵的是函数体（生成 ~1.9 MB 的 HTML）。
+    """
+    return generate_scene_html()
+
+
+def _get_scene_html() -> str:
+    """取场景 HTML（命中缓存时几乎瞬时返回）。
+
+    带耗时日志：这个函数的耗时直接决定「中间 3D 区域多久能出来」，
+    因为它在 main() 里是同步调用的 —— 服务端没生成完，iframe 就不会出现。
+    """
+    t0 = time.time()
+    fp = _scene_fingerprint()
+    t_fp = time.time() - t0
+    t1 = time.time()
+    try:
+        html = _cached_scene_html(fp)
+        hit = True
+    except Exception as e:
+        # 缓存出问题不能让页面挂掉，退回直接生成
+        print(f"⚠️ 场景缓存不可用，改为直接生成: {e}")
+        html = generate_scene_html()
+        hit = False
+    t_gen = time.time() - t1
+    # 只在明显慢时才打印，避免刷屏
+    if t_gen > 0.15 or t_fp > 0.15:
+        print(f"⏱️ 场景 HTML: 指纹 {t_fp * 1000:.0f}ms + 生成 {t_gen * 1000:.0f}ms "
+              f"= {(t_fp + t_gen) * 1000:.0f}ms  ({'缓存命中' if t_gen < 0.05 else '缓存未命中'}，"
+              f"HTML {len(html) / 1024:.0f} KB)")
+
+    if st.session_state.get('_force_fps_on', False):
+        # 1) 强制开 FPS
+        html = html.replace(
+            "const fpsEnabled = localStorage.getItem('pref_show_fps') === 'true';",
+            "const fpsEnabled = true;  // 🔥 大屏模式强制开启",
+        )
+        # 2) 给 iframe 内部 body 加类名（驱动 FPS 面板放大的 CSS）
+        #    必须加在 iframe 内部 —— FPS 面板就在里面，
+        #    外面 Streamlit 页面的 body 跟它无关。
+        html = html.replace(
+            "<body>",
+            '<body class="big-screen">',
+            1,  # 只替换第一个，防止别处也有 <body> 字样
+        )
+
+    return html
+
+
+def _scene_fragment_body(height: int, big: bool):
+    """3D 场景的渲染体（供 fragment 调用）。
+
+    之所以把「取 HTML + 挂 iframe + 底部指标条」放在一个函数里：
+    它整体是一个独立区块，交互时应该只重跑这一块，而不是整个页面。
+    """
+    html_content = _get_scene_html()
+    st.iframe(html_content, height=height)
+    if big:
+        render_bottom_bar_big()
+    else:
+        render_bottom_bar()
+
+
+# 🔥 用 st.fragment 把 3D 场景隔离出来 —— 这是"页面卡、点不动"的架构级解法。
+#
+# 问题：
+#   原来的 main() 是「左面板 → 3D 场景 → 右面板」直线执行，而 3D 场景最重
+#   （生成约 500 KB HTML + 挂 iframe 组件）。Streamlit 默认**任何**交互都会
+#   重跑整个脚本 —— 于是在左侧点一下、改个属性，都要连带重建整个 3D 场景，
+#   表现为「一直在加载」。
+#
+# 解法（Streamlit 官方推荐）：
+#   @st.fragment 让这一块可以**独立 rerun**，不触发整个页面重跑。
+#   配合下面的 st.rerun("dtt_scene")，场景内部的交互（相机、自动导览、选中）
+#   只重画这一块。
+#
+# 两个 key 分别对应常规模式与大屏模式 —— 同一页面不能有两个同名 fragment。
+@st.fragment
+def _render_scene_column(height: int = 800):
+    _scene_fragment_body(height, big=False)
+
+
+@st.fragment
+def _render_scene_big(height: int = 750):
+    _scene_fragment_body(height, big=True)
+
+
 def _inject_ponder(html: str) -> str:
     """
     在生成好的场景 HTML 里注入「思索」运行时。
@@ -11463,15 +13581,54 @@ def _ponder_asset_version() -> str:
     return h.hexdigest()[:10]
 
 def sync_bound_chargers_utilization():
-    """
-    在页面渲染前，批量同步已绑定充电桩的实时利用率到 scene_objects。
-    作用：让左侧资产树和 3D 场景能拿到与右侧面板一致的实时数据。
-    """
     objects = st.session_state.get('scene_objects', [])
     if not objects:
         return
 
-    # 先收集「已绑定且无模拟数据」的充电桩，避免无绑定时无谓加载预测器(torch)
+    # ============================================================
+    # 🔥 新增：自动绑定 —— 给未绑定的充电桩批量分配站点 id
+    #
+    # 为什么放在这里：这个函数本来就在"渲染前"执行，且已经会改 scene_objects。
+    # 放在这里的副作用最小。
+    #
+    # 为什么需要：时间轴/实时数据/MQTT 告警全部依赖 bind_station_id，
+    # 而用户从模板或 CSV 导入的充电桩默认没有绑定 → 时间轴滑到哪都一样。
+    #
+    # 为什么同步到 Supabase：不同步的话，用户一刷新，_db_initialized=True
+    # 触发的 init_db_scene 会从数据库加载旧数据（无绑定），自动绑定白做。
+    # ============================================================
+    chargers = [o for o in objects if o.get('type', '').startswith('charger')]
+    if chargers:
+        bound_count = sum(1 for c in chargers if c.get('bind_station_id'))
+        # 触发条件：绑定率 < 50%（说明用户没刻意逐个绑，走自动模式）
+        if bound_count < len(chargers) * 0.5:
+            info = _occupancy_header()
+            all_sids = (info or {}).get('columns') or []
+            if all_sids:
+                unbound = [c for c in chargers if not c.get('bind_station_id')]
+                # 循环分配：桩比站点多时反复用同一批站点 id
+                for i, c in enumerate(unbound):
+                    c['bind_station_id'] = all_sids[i % len(all_sids)]
+
+                if st.session_state.get('current_scene'):
+                    st.session_state.current_scene.objects = objects
+                # 🔥 就地改了物体 → 让场景 HTML 缓存失效
+                mark_scene_changed()
+
+                # 🔥 同步到 Supabase（如果可用）
+                if SUPABASE_AVAILABLE and st.session_state.get('scene_id'):
+                    try:
+                        sync_scene_objects(
+                            st.session_state.scene_id,
+                            st.session_state.scene_objects
+                        )
+                    except Exception as e:
+                        print(f"⚠️ 自动绑定后同步 Supabase 失败: {e}")
+
+                print(f"🔗 自动绑定 {len(unbound)} 个充电桩"
+                      f"（复用 {len(all_sids)} 个站点 id）")
+
+    # ========== 以下保留你原有的实时数据同步逻辑 ==========
     targets = [
         obj for obj in objects
         if obj.get('type', '').startswith('charger')
@@ -11503,6 +13660,10 @@ def sync_bound_chargers_utilization():
 
 # ==================== 主布局 ====================
 def main():
+    if _IS_DEMO_DATA:
+        print("📦 数据源：demo 精简版（作品交付包模式）")
+    else:
+        print("📦 数据源：完整 UrbanEV 数据集（开发模式）")
     # 消费上一次 fragment 触发的全刷新原因（仅用于调试和日志）
     _dirty = consume_dirty()
     if _dirty:
@@ -11518,12 +13679,11 @@ def main():
     # 2. 处理 URL 参数（风格、故事、选中、位置更新、删除、复制、新建空白）
     query_params = st.query_params
 
-    # 处理新建空白场景时传递的新 ID
+    # ===== 处理选中 =====
     if "selected" in query_params:
         selected_id = query_params["selected"]
         if selected_id:
             st.session_state.selected_object_id = selected_id
-            # 🔥 关键：同步通知 selectbox 更新它的值
             st.session_state['object_selectbox'] = selected_id
             _clear_transient_query_params()
             st.rerun()
@@ -11604,6 +13764,10 @@ def main():
                 obj['scale'] = {"x": sx, "y": sy, "z": sz}
                 # P3：不再写 _runtime_* 影子字段（该机制已移除）
                 break
+        # 🔥 就地改了物体 -> 必须让场景 HTML 缓存失效，
+        #    否则 _scene_fingerprint 的快速路径（列表对象+长度未变）会命中旧缓存，
+        #    界面看不到这次移动。
+        mark_scene_changed()
         if st.session_state.current_scene:
             st.session_state.current_scene.objects = st.session_state.scene_objects.copy()
         _clear_transient_query_params()
@@ -11657,9 +13821,18 @@ def main():
         # 🔥 大屏模式：全屏3D + 底部指标条 + 右上角浮动退出按钮
         # 用 HTML + JS 触发 URL 参数，避免 st.columns 占用文档流导致 3D 场景被下推
         if st.session_state.get('big_screen_mode', False):
+            # 🔥 大屏模式强制开 FPS
+            #    注意：这里只设标志，真正的字符串替换在 _get_scene_html 里做。
+            #    为什么不在这里用 st.markdown 注入 script：
+            #      · Streamlit 会剥离 <script>，注入无效
+            #      · 就算能执行，加的是外层 body 的类名，而 FPS 面板在 iframe 内，
+            #        类名加错地方，样式永远匹配不上
+            st.session_state['_force_fps_on'] = True
+
             # CSS：隐藏顶部留白 + 把第一个按钮固定到右上角
             st.markdown("""
             <style>
+            
                 section.main .block-container {
                     padding-top: 0 !important;
                     padding-bottom: 0.5rem !important;
@@ -11670,7 +13843,6 @@ def main():
                     min-height: 0 !important;
                     background: transparent !important;
                 }
-                /* 把大屏模式下第一个 st.button 固定到右上角 */
                 .big-screen-exit-marker ~ div[data-testid="stButton"] button,
                 .big-screen-exit-marker + div button {
                     position: fixed !important;
@@ -11697,23 +13869,21 @@ def main():
                 st.session_state.big_screen_mode = False
                 st.rerun()
 
-        html_content = generate_scene_html()
-        # 🔥 从 850 降到 750，配合底部指标条
-        # 🔥 修复：大屏模式此前在这里渲染了两遍（生成两遍 6000 行 HTML + 挂两个 iframe），
-        #         现在只保留这一处
-        st.iframe(html_content, height=750)
-        render_bottom_bar_big()
+        # 🔥 3D 场景独立成 fragment：交互时只重跑这一块（见 _render_scene_big 的说明）
+        _render_scene_big(750)
     else:
+        # 🔥 常规模式关闭强制 FPS（除非用户自己在工具箱里开了）
+        st.session_state['_force_fps_on'] = False
         # 常规模式
+        # 🔥 渲染顺序：左右面板（快）先出来，中间最重的 3D 场景放最后。
+        #    这样页面骨架先可见、可交互，不必等场景生成完。
         left_col, center_col, right_col = st.columns([2.5, 5.0, 2.7], gap="small")
         with left_col:
             render_left_panel()
-        with center_col:
-            html_content = generate_scene_html()
-            st.iframe(html_content, height=800)
-            render_bottom_bar()
         with right_col:
             render_right_panel()
+        with center_col:
+            _render_scene_column(800)
 
     # 5. 实时数据流
     if 'scene_objects' in st.session_state:

@@ -62,6 +62,12 @@ exports/
 *.bak_*
 *.backup
 
+# ==================== 运行时生成产物（不提交）====================
+# 场景几何数据由 generate_scene_html() 写入这里（文件名带内容指纹），
+# 供浏览器经 /app/static/ 以 HTTP + ETag 缓存加载 ——
+# 这是「刷新页面不重传几何数据」的实现方式。属运行时产物，不进版本库。
+static/data/_runtime/
+
 # PyInstaller 生成文件
 *.spec
 

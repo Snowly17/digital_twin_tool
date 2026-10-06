@@ -128,7 +128,8 @@ def _cat_zh(cat):
 def build_relations(objects: List[Dict],
                     street_threshold: float = 12.0,    # 沿街判定
                     serve_threshold: float = 25.0,      # 服务范围
-                    adjacent_threshold: float = 10.0):  # 相邻判定
+                    adjacent_threshold: float = 10.0,   # 相邻判定
+                    max_objects: int = 300):            # 超过则跳过几何关系分析
     """
     城市规划视角的语义关系构建
 
@@ -137,8 +138,33 @@ def build_relations(objects: List[Dict],
     - serves          充电桩 → 建筑（服务此建筑）
     - connects        道路 → 建筑（道路连接此建筑）
     - adjacent        充电桩 → 充电桩（集群）
+
+    ⚠️ 复杂度警告（实测踩过）
+    -------------------------
+    本函数是 O(n²) 甚至更高，主要为「几十到几百个物体」的精细建模场景设计。
+    在城市场景下会直接卡死应用：
+
+        1423 桩 × 713 楼                    ≈ 100 万次 点-点距离
+        4781 路 × 713 楼                    ≈ 340 万次 点-线段距离
+        713 楼两两配对 × 2 × 4781 条路      ≈ 24 亿次 点-线段距离  ← 真正的杀手
+
+    最后一段（同街建筑）在深圳市场景下让 Streamlit 服务端彻底无响应，
+    页面表现为「一直刷新不出来」。
+
+    因此加 max_objects 门槛：物体数超过它时只清空旧关系、不做几何分析。
+    关系数据只用于右侧详情面板的展示，跳过不影响渲染与交互。
     """
     if not objects:
+        return objects
+
+    # 🔥 大规模场景直接跳过几何关系分析（见上面的复杂度说明）
+    if len(objects) > max_objects:
+        for obj in objects:
+            if 'custom_props' not in obj:
+                obj['custom_props'] = {}
+            obj['custom_props']['relations'] = []
+        print(f"ℹ️ 物体数 {len(objects)} 超过关系分析上限 {max_objects}，"
+              f"跳过几何关系构建（避免 O(n²) 卡死；不影响渲染与交互）")
         return objects
 
     # 🔥 清空所有物体的旧关系
