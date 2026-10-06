@@ -15,18 +15,35 @@ import uuid
 _supabase_client: Optional[Client] = None
 
 
-def get_supabase_client() -> Client:
-    """获取 Supabase 客户端单例"""
+def get_supabase_client() -> Optional[Client]:
+    """获取 Supabase 客户端单例。
+
+    ⚠️ 按 st.secrets → 环境变量 的顺序读配置。
+       Railway / Streamlit Cloud 上没有 secrets.toml，裸读 st.secrets 会崩。
+    """
     global _supabase_client
-    if _supabase_client is None:
-        try:
-            url = st.secrets["SUPABASE_URL"]
-            key = st.secrets["SUPABASE_ANON_KEY"]
-            _supabase_client = create_client(url, key)
-        except Exception as e:
-            st.error(f"❌ Supabase 连接失败: {e}")
-            raise
-    return _supabase_client
+    if _supabase_client is not None:
+        return _supabase_client
+
+    try:
+        from core.console import read_secret
+        url = read_secret("SUPABASE_URL")
+        key = read_secret("SUPABASE_ANON_KEY") or read_secret("SUPABASE_KEY")
+        if not url or not key:
+            # 不抛异常会返回 None，下游 None.table() 会崩；
+            # 抛异常让调用方各自的 try/except 捕获后走兜底分支
+            raise RuntimeError("Supabase 未配置（缺少 SUPABASE_URL / SUPABASE_ANON_KEY）")
+    except Exception as e:
+        print(f"⚠️ Supabase 配置读取失败: {e}")
+        raise
+
+    try:
+        _supabase_client = create_client(url, key)
+        print("✅ Supabase 客户端初始化成功")
+        return _supabase_client
+    except Exception as e:
+        print(f"⚠️ Supabase 客户端创建失败: {e}")
+        raise
 
 
 # ==================== 场景操作 ====================
