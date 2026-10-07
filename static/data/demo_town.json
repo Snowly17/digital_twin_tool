@@ -1,0 +1,3757 @@
+{
+  "version": "1.0",
+  "scene_name": "滨水小镇（演示）",
+  "created_at": "2026-09-19T04:51:02+00:00",
+  "updated_at": "2026-09-19T04:51:02+00:00",
+  "author": "mock_data/town",
+  "metadata": {
+    "description": "带路网与河道的滨水小镇：主街 + 滨河路 + 商业/住宅街区 + 充电广场 + 能源区",
+    "object_count": 137,
+    "type_counts": {
+      "water": 1,
+      "sidewalk": 5,
+      "road": 8,
+      "lamp": 4,
+      "car": 5,
+      "tree": 24,
+      "building_tall": 31,
+      "building": 10,
+      "container_b": 9,
+      "solar_panel_land": 15,
+      "charger_fast": 14,
+      "charger_slow": 11
+    },
+    "ground_limit": "地面 PlaneGeometry(80,80)，对象须落在 ±40 内",
+    "layout": "waterfront：32×27 网格，格距 2.2",
+    "features": "主街/滨河路/滨水步道 + 城市河道 + 中央广场 + 商业/住宅街区 + 充电广场 + 能源区"
+  },
+  "objects": [
+    {
+      "id": "wf-water-001",
+      "type": "water",
+      "name": "城市河道-001",
+      "position": {
+        "x": 34.155,
+        "y": 0.0,
+        "z": -5.987
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 6.599999999999999,
+        "length": 48.400000000000006,
+        "color": "#1d4f6e"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-plaza-002",
+      "type": "sidewalk",
+      "name": "中央广场-002",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 11.0,
+        "length": 2.2,
+        "color": "#8f939b",
+        "center_line": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-003",
+      "type": "road",
+      "name": "道路-003",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -20.287
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.0,
+        "length": 59.400000000000006,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-004",
+      "type": "road",
+      "name": "道路-004",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -0.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.6,
+        "length": 59.400000000000006,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": true
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-005",
+      "type": "road",
+      "name": "道路-005",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": 3.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.6,
+        "length": 59.400000000000006,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": true
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-006",
+      "type": "road",
+      "name": "主街-006",
+      "position": {
+        "x": 4.455,
+        "y": 0.0,
+        "z": -9.287
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 5.4,
+        "length": 70.4,
+        "color": "#3c4148",
+        "center_line": true,
+        "sidewalk": true
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-007",
+      "type": "road",
+      "name": "道路-007",
+      "position": {
+        "x": -18.645,
+        "y": 0.0,
+        "z": -8.187
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.6,
+        "length": 22.0,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": true
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-008",
+      "type": "road",
+      "name": "道路-008",
+      "position": {
+        "x": -5.445,
+        "y": 0.0,
+        "z": -24.687
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.0,
+        "length": 11.0,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-009",
+      "type": "road",
+      "name": "道路-009",
+      "position": {
+        "x": 7.755,
+        "y": 0.0,
+        "z": -8.187
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.6,
+        "length": 22.0,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": true
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-road-010",
+      "type": "road",
+      "name": "道路-010",
+      "position": {
+        "x": 20.955,
+        "y": 0.0,
+        "z": -25.787
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 3.0,
+        "length": 8.8,
+        "color": "#3c4148",
+        "center_line": false,
+        "sidewalk": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-walk-011",
+      "type": "sidewalk",
+      "name": "人行道-01-011",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -12.687
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 1.4,
+        "length": 59.400000000000006,
+        "color": "#767d88",
+        "center_line": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-walk-012",
+      "type": "sidewalk",
+      "name": "人行道-02-012",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -5.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 1.4,
+        "length": 59.400000000000006,
+        "color": "#767d88",
+        "center_line": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-walk-013",
+      "type": "sidewalk",
+      "name": "人行道-03-013",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": -2.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 1.2,
+        "length": 19.8,
+        "color": "#767d88",
+        "center_line": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-walk-014",
+      "type": "sidewalk",
+      "name": "人行道-04-014",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": 1.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "width": 1.2,
+        "length": 19.8,
+        "color": "#767d88",
+        "center_line": false
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-light-015",
+      "type": "lamp",
+      "name": "红绿灯-01-015",
+      "position": {
+        "x": -21.065,
+        "y": 0.0,
+        "z": -11.707
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-light-016",
+      "type": "lamp",
+      "name": "红绿灯-02-016",
+      "position": {
+        "x": -21.065,
+        "y": 0.0,
+        "z": -6.867
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-light-017",
+      "type": "lamp",
+      "name": "红绿灯-03-017",
+      "position": {
+        "x": -16.225,
+        "y": 0.0,
+        "z": -11.707
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-light-018",
+      "type": "lamp",
+      "name": "红绿灯-04-018",
+      "position": {
+        "x": -16.225,
+        "y": 0.0,
+        "z": -6.867
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-car-019",
+      "type": "car",
+      "name": "车辆-main-east-01-019",
+      "position": {
+        "x": -15.545,
+        "y": 0.0,
+        "z": -7.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-car-020",
+      "type": "car",
+      "name": "车辆-main-east-02-020",
+      "position": {
+        "x": 0.455,
+        "y": 0.0,
+        "z": -7.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-car-021",
+      "type": "car",
+      "name": "车辆-main-east-03-021",
+      "position": {
+        "x": 16.455,
+        "y": 0.0,
+        "z": -7.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-car-022",
+      "type": "car",
+      "name": "车辆-main-west-04-022",
+      "position": {
+        "x": 28.455,
+        "y": 0.0,
+        "z": -11.087
+      },
+      "rotation": {
+        "x": 0,
+        "y": 4.7124,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-car-023",
+      "type": "car",
+      "name": "车辆-river-east-05-023",
+      "position": {
+        "x": 12.455,
+        "y": 0.0,
+        "z": 0.413
+      },
+      "rotation": {
+        "x": 0,
+        "y": 1.5708,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-024",
+      "type": "tree",
+      "name": "景观树-06-024",
+      "position": {
+        "x": -14.245,
+        "y": 0.0,
+        "z": -22.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-025",
+      "type": "tree",
+      "name": "景观树-12-025",
+      "position": {
+        "x": -7.645,
+        "y": 0.0,
+        "z": -22.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-026",
+      "type": "tree",
+      "name": "景观树-06-026",
+      "position": {
+        "x": 1.155,
+        "y": 0.0,
+        "z": -22.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-027",
+      "type": "tree",
+      "name": "景观树-12-027",
+      "position": {
+        "x": 7.755,
+        "y": 0.0,
+        "z": -22.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-028",
+      "type": "tree",
+      "name": "景观树-18-028",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": -22.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-029",
+      "type": "tree",
+      "name": "景观树-06-029",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": -22.487
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-030",
+      "type": "building_tall",
+      "name": "商业街区A-01-030",
+      "position": {
+        "x": -29.645,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.25,
+        "floor": 3,
+        "district": "商业街区A",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-031",
+      "type": "building_tall",
+      "name": "商业街区A-02-031",
+      "position": {
+        "x": -27.445,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 6.0,
+        "floor": 4,
+        "district": "商业街区A",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-032",
+      "type": "building_tall",
+      "name": "商业街区A-03-032",
+      "position": {
+        "x": -25.245,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.88,
+        "floor": 3,
+        "district": "商业街区A",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-033",
+      "type": "building_tall",
+      "name": "商业街区A-04-033",
+      "position": {
+        "x": -23.045,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.62,
+        "floor": 3,
+        "district": "商业街区A",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-034",
+      "type": "building_tall",
+      "name": "商业街区A-05-034",
+      "position": {
+        "x": -20.845,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.5,
+        "floor": 3,
+        "district": "商业街区A",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-035",
+      "type": "building_tall",
+      "name": "商业街区B-01-035",
+      "position": {
+        "x": -16.445,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.25,
+        "floor": 3,
+        "district": "商业街区B",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-036",
+      "type": "building_tall",
+      "name": "商业街区B-02-036",
+      "position": {
+        "x": -14.245,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 6.0,
+        "floor": 4,
+        "district": "商业街区B",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-037",
+      "type": "building_tall",
+      "name": "商业街区B-03-037",
+      "position": {
+        "x": -12.045,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.88,
+        "floor": 3,
+        "district": "商业街区B",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-038",
+      "type": "building_tall",
+      "name": "商业街区B-04-038",
+      "position": {
+        "x": -9.845,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.62,
+        "floor": 3,
+        "district": "商业街区B",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-039",
+      "type": "building_tall",
+      "name": "商业街区B-05-039",
+      "position": {
+        "x": -7.645,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.5,
+        "floor": 3,
+        "district": "商业街区B",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-040",
+      "type": "building_tall",
+      "name": "商业街区C-01-040",
+      "position": {
+        "x": -3.245,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.5,
+        "floor": 3,
+        "district": "商业街区C",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-041",
+      "type": "building_tall",
+      "name": "商业街区C-02-041",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 6.0,
+        "floor": 4,
+        "district": "商业街区C",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-042",
+      "type": "building_tall",
+      "name": "商业街区C-03-042",
+      "position": {
+        "x": 1.155,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.25,
+        "floor": 3,
+        "district": "商业街区C",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-043",
+      "type": "building_tall",
+      "name": "商业街区C-04-043",
+      "position": {
+        "x": 3.355,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.75,
+        "floor": 3,
+        "district": "商业街区C",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-044",
+      "type": "building_tall",
+      "name": "商业街区C-05-044",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.0,
+        "floor": 3,
+        "district": "商业街区C",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-045",
+      "type": "building_tall",
+      "name": "商业街区D-01-045",
+      "position": {
+        "x": 23.155,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.25,
+        "floor": 3,
+        "district": "商业街区D",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-046",
+      "type": "building_tall",
+      "name": "商业街区D-02-046",
+      "position": {
+        "x": 25.355,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 6.0,
+        "floor": 4,
+        "district": "商业街区D",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-047",
+      "type": "building_tall",
+      "name": "商业街区D-03-047",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": -15.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.88,
+        "floor": 3,
+        "district": "商业街区D",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-048",
+      "type": "building_tall",
+      "name": "商业街区E-01-048",
+      "position": {
+        "x": -3.245,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.75,
+        "floor": 3,
+        "district": "商业街区E",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-049",
+      "type": "building_tall",
+      "name": "商业街区E-02-049",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.5,
+        "floor": 3,
+        "district": "商业街区E",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-050",
+      "type": "building_tall",
+      "name": "商业街区E-03-050",
+      "position": {
+        "x": 1.155,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.38,
+        "floor": 2,
+        "district": "商业街区E",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-051",
+      "type": "building_tall",
+      "name": "商业街区E-04-051",
+      "position": {
+        "x": 3.355,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.12,
+        "floor": 3,
+        "district": "商业街区E",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-052",
+      "type": "building_tall",
+      "name": "商业街区E-05-052",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.0,
+        "floor": 2,
+        "district": "商业街区E",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-053",
+      "type": "building_tall",
+      "name": "商业街区F-01-053",
+      "position": {
+        "x": 9.955,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.75,
+        "floor": 3,
+        "district": "商业街区F",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-054",
+      "type": "building_tall",
+      "name": "商业街区F-02-054",
+      "position": {
+        "x": 12.155,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.5,
+        "floor": 3,
+        "district": "商业街区F",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-055",
+      "type": "building_tall",
+      "name": "商业街区F-03-055",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.38,
+        "floor": 2,
+        "district": "商业街区F",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-056",
+      "type": "building_tall",
+      "name": "商业街区F-04-056",
+      "position": {
+        "x": 16.555,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.12,
+        "floor": 3,
+        "district": "商业街区F",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-057",
+      "type": "building_tall",
+      "name": "商业街区F-05-057",
+      "position": {
+        "x": 18.755,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.0,
+        "floor": 2,
+        "district": "商业街区F",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-058",
+      "type": "building_tall",
+      "name": "商业街区G-01-058",
+      "position": {
+        "x": 23.155,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.75,
+        "floor": 3,
+        "district": "商业街区G",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-059",
+      "type": "building_tall",
+      "name": "商业街区G-02-059",
+      "position": {
+        "x": 25.355,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 5.5,
+        "floor": 3,
+        "district": "商业街区G",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-060",
+      "type": "building_tall",
+      "name": "商业街区G-03-060",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 4.38,
+        "floor": 2,
+        "district": "商业街区G",
+        "use": "commercial"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-061",
+      "type": "building",
+      "name": "住宅街区W-01-061",
+      "position": {
+        "x": -29.645,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 3.0,
+        "floor": 2,
+        "district": "住宅街区W",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-062",
+      "type": "building",
+      "name": "住宅街区W-02-062",
+      "position": {
+        "x": -27.445,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 3.4,
+        "floor": 2,
+        "district": "住宅街区W",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-063",
+      "type": "building",
+      "name": "住宅街区W-03-063",
+      "position": {
+        "x": -25.245,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 2.8,
+        "floor": 1,
+        "district": "住宅街区W",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-064",
+      "type": "building",
+      "name": "住宅街区W-04-064",
+      "position": {
+        "x": -23.045,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 3.2,
+        "floor": 2,
+        "district": "住宅街区W",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-065",
+      "type": "building",
+      "name": "住宅街区W-05-065",
+      "position": {
+        "x": -20.845,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 2.6,
+        "floor": 1,
+        "district": "住宅街区W",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-066",
+      "type": "building",
+      "name": "住宅街区E-01-066",
+      "position": {
+        "x": -16.445,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 3.0,
+        "floor": 2,
+        "district": "住宅街区E",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-067",
+      "type": "building",
+      "name": "住宅街区E-02-067",
+      "position": {
+        "x": -14.245,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 3.4,
+        "floor": 2,
+        "district": "住宅街区E",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-068",
+      "type": "building",
+      "name": "住宅街区E-03-068",
+      "position": {
+        "x": -12.045,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 2.8,
+        "floor": 1,
+        "district": "住宅街区E",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-069",
+      "type": "building",
+      "name": "住宅街区E-04-069",
+      "position": {
+        "x": -9.845,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 3.2,
+        "floor": 2,
+        "district": "住宅街区E",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-bld-070",
+      "type": "building",
+      "name": "住宅街区E-05-070",
+      "position": {
+        "x": -7.645,
+        "y": 0.0,
+        "z": -4.887
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront",
+        "height": 2.6,
+        "floor": 1,
+        "district": "住宅街区E",
+        "use": "residential"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-071",
+      "type": "tree",
+      "name": "景观树-06-071",
+      "position": {
+        "x": -25.245,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-072",
+      "type": "tree",
+      "name": "景观树-12-072",
+      "position": {
+        "x": -18.645,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-073",
+      "type": "tree",
+      "name": "景观树-18-073",
+      "position": {
+        "x": -12.045,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-074",
+      "type": "tree",
+      "name": "景观树-24-074",
+      "position": {
+        "x": -5.445,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-075",
+      "type": "tree",
+      "name": "景观树-30-075",
+      "position": {
+        "x": 1.155,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-076",
+      "type": "tree",
+      "name": "景观树-36-076",
+      "position": {
+        "x": 7.755,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-077",
+      "type": "tree",
+      "name": "景观树-42-077",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-078",
+      "type": "tree",
+      "name": "景观树-48-078",
+      "position": {
+        "x": 20.955,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-079",
+      "type": "tree",
+      "name": "景观树-54-079",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": 8.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-080",
+      "type": "tree",
+      "name": "景观树-06-080",
+      "position": {
+        "x": -9.845,
+        "y": 0.0,
+        "z": 14.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-081",
+      "type": "tree",
+      "name": "景观树-12-081",
+      "position": {
+        "x": -7.645,
+        "y": 0.0,
+        "z": 19.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-082",
+      "type": "tree",
+      "name": "景观树-18-082",
+      "position": {
+        "x": -3.245,
+        "y": 0.0,
+        "z": 14.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-083",
+      "type": "tree",
+      "name": "景观树-24-083",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": 19.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-084",
+      "type": "tree",
+      "name": "景观树-30-084",
+      "position": {
+        "x": 3.355,
+        "y": 0.0,
+        "z": 14.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-085",
+      "type": "tree",
+      "name": "景观树-36-085",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": 19.313
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-086",
+      "type": "container_b",
+      "name": "储能柜-01-086",
+      "position": {
+        "x": 9.955,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-087",
+      "type": "container_b",
+      "name": "储能柜-03-087",
+      "position": {
+        "x": 9.955,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-088",
+      "type": "container_b",
+      "name": "储能柜-05-088",
+      "position": {
+        "x": 12.155,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-089",
+      "type": "container_b",
+      "name": "储能柜-07-089",
+      "position": {
+        "x": 12.155,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-090",
+      "type": "container_b",
+      "name": "储能柜-09-090",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-091",
+      "type": "container_b",
+      "name": "储能柜-11-091",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-092",
+      "type": "solar_panel_land",
+      "name": "光伏板-01-092",
+      "position": {
+        "x": 18.755,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-093",
+      "type": "solar_panel_land",
+      "name": "光伏板-03-093",
+      "position": {
+        "x": 18.755,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-094",
+      "type": "solar_panel_land",
+      "name": "光伏板-05-094",
+      "position": {
+        "x": 20.955,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-095",
+      "type": "solar_panel_land",
+      "name": "光伏板-07-095",
+      "position": {
+        "x": 20.955,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-096",
+      "type": "solar_panel_land",
+      "name": "光伏板-09-096",
+      "position": {
+        "x": 23.155,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-097",
+      "type": "solar_panel_land",
+      "name": "光伏板-11-097",
+      "position": {
+        "x": 23.155,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-098",
+      "type": "solar_panel_land",
+      "name": "光伏板-13-098",
+      "position": {
+        "x": 25.355,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-099",
+      "type": "solar_panel_land",
+      "name": "光伏板-15-099",
+      "position": {
+        "x": 25.355,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-100",
+      "type": "solar_panel_land",
+      "name": "光伏板-17-100",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": 12.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-101",
+      "type": "solar_panel_land",
+      "name": "光伏板-19-101",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": 17.113
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-102",
+      "type": "tree",
+      "name": "景观树-06-102",
+      "position": {
+        "x": -7.645,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-103",
+      "type": "tree",
+      "name": "景观树-12-103",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-tree-104",
+      "type": "tree",
+      "name": "景观树-18-104",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-105",
+      "type": "container_b",
+      "name": "储能柜-01-105",
+      "position": {
+        "x": 9.955,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-106",
+      "type": "container_b",
+      "name": "储能柜-03-106",
+      "position": {
+        "x": 12.155,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-cont-107",
+      "type": "container_b",
+      "name": "储能柜-05-107",
+      "position": {
+        "x": 14.355,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-108",
+      "type": "solar_panel_land",
+      "name": "光伏板-01-108",
+      "position": {
+        "x": 18.755,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-109",
+      "type": "solar_panel_land",
+      "name": "光伏板-03-109",
+      "position": {
+        "x": 20.955,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-110",
+      "type": "solar_panel_land",
+      "name": "光伏板-05-110",
+      "position": {
+        "x": 23.155,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-111",
+      "type": "solar_panel_land",
+      "name": "光伏板-07-111",
+      "position": {
+        "x": 25.355,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-solar-112",
+      "type": "solar_panel_land",
+      "name": "光伏板-09-112",
+      "position": {
+        "x": 27.555,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "",
+      "custom_props": {
+        "town": "waterfront"
+      },
+      "utilization": 0.5
+    },
+    {
+      "id": "wf-chg-113",
+      "type": "charger_fast",
+      "name": "充电站-C01-113",
+      "position": {
+        "x": -29.645,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C01",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.699
+    },
+    {
+      "id": "wf-chg-114",
+      "type": "charger_fast",
+      "name": "充电站-C02-114",
+      "position": {
+        "x": -27.445,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C02",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.549
+    },
+    {
+      "id": "wf-chg-115",
+      "type": "charger_fast",
+      "name": "充电站-C03-115",
+      "position": {
+        "x": -25.245,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C03",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.469
+    },
+    {
+      "id": "wf-chg-116",
+      "type": "charger_fast",
+      "name": "充电站-C04-116",
+      "position": {
+        "x": -23.045,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C04",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.639
+    },
+    {
+      "id": "wf-chg-117",
+      "type": "charger_fast",
+      "name": "充电站-C05-117",
+      "position": {
+        "x": -20.845,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C05",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.676
+    },
+    {
+      "id": "wf-chg-118",
+      "type": "charger_fast",
+      "name": "充电站-C06-118",
+      "position": {
+        "x": -3.245,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C06",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.496
+    },
+    {
+      "id": "wf-chg-119",
+      "type": "charger_fast",
+      "name": "充电站-C07-119",
+      "position": {
+        "x": -1.045,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C07",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.506
+    },
+    {
+      "id": "wf-chg-120",
+      "type": "charger_fast",
+      "name": "充电站-C08-120",
+      "position": {
+        "x": 1.155,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C08",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.683
+    },
+    {
+      "id": "wf-chg-121",
+      "type": "charger_fast",
+      "name": "充电站-C09-121",
+      "position": {
+        "x": 3.355,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C09",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.628
+    },
+    {
+      "id": "wf-chg-122",
+      "type": "charger_fast",
+      "name": "充电站-C10-122",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": -12.587
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C10",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.465
+    },
+    {
+      "id": "wf-chg-123",
+      "type": "charger_fast",
+      "name": "充电站-C11-123",
+      "position": {
+        "x": -16.445,
+        "y": 0.0,
+        "z": -5.987
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C11",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.562
+    },
+    {
+      "id": "wf-chg-124",
+      "type": "charger_fast",
+      "name": "充电站-C12-124",
+      "position": {
+        "x": -14.245,
+        "y": 0.0,
+        "z": -5.987
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C12",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.7
+    },
+    {
+      "id": "wf-chg-125",
+      "type": "charger_fast",
+      "name": "充电站-C13-125",
+      "position": {
+        "x": -12.045,
+        "y": 0.0,
+        "z": -5.987
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C13",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.567
+    },
+    {
+      "id": "wf-chg-126",
+      "type": "charger_fast",
+      "name": "充电站-C14-126",
+      "position": {
+        "x": -9.845,
+        "y": 0.0,
+        "z": -5.987
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "C14",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 120,
+        "zone": "commercial",
+        "source": "waterfront"
+      },
+      "utilization": 0.463
+    },
+    {
+      "id": "wf-chg-127",
+      "type": "charger_slow",
+      "name": "充电站-S15-127",
+      "position": {
+        "x": 1.155,
+        "y": 0.0,
+        "z": 1.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S15",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "park",
+        "source": "waterfront"
+      },
+      "utilization": 0.303
+    },
+    {
+      "id": "wf-chg-128",
+      "type": "charger_slow",
+      "name": "充电站-S16-128",
+      "position": {
+        "x": 3.355,
+        "y": 0.0,
+        "z": 1.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S16",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "park",
+        "source": "waterfront"
+      },
+      "utilization": 0.366
+    },
+    {
+      "id": "wf-chg-129",
+      "type": "charger_slow",
+      "name": "充电站-S17-129",
+      "position": {
+        "x": 5.555,
+        "y": 0.0,
+        "z": 1.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S17",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "park",
+        "source": "waterfront"
+      },
+      "utilization": 0.19
+    },
+    {
+      "id": "wf-chg-130",
+      "type": "charger_slow",
+      "name": "充电站-S18-130",
+      "position": {
+        "x": -29.645,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S18",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.173
+    },
+    {
+      "id": "wf-chg-131",
+      "type": "charger_slow",
+      "name": "充电站-S19-131",
+      "position": {
+        "x": -27.445,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S19",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.353
+    },
+    {
+      "id": "wf-chg-132",
+      "type": "charger_slow",
+      "name": "充电站-S20-132",
+      "position": {
+        "x": -25.245,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S20",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.323
+    },
+    {
+      "id": "wf-chg-133",
+      "type": "charger_slow",
+      "name": "充电站-S21-133",
+      "position": {
+        "x": -23.045,
+        "y": 0.0,
+        "z": 23.713
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S21",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.151
+    },
+    {
+      "id": "wf-chg-134",
+      "type": "charger_slow",
+      "name": "充电站-S22-134",
+      "position": {
+        "x": -29.645,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S22",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.225
+    },
+    {
+      "id": "wf-chg-135",
+      "type": "charger_slow",
+      "name": "充电站-S23-135",
+      "position": {
+        "x": -27.445,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S23",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.378
+    },
+    {
+      "id": "wf-chg-136",
+      "type": "charger_slow",
+      "name": "充电站-S24-136",
+      "position": {
+        "x": -25.245,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S24",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.265
+    },
+    {
+      "id": "wf-chg-137",
+      "type": "charger_slow",
+      "name": "充电站-S25-137",
+      "position": {
+        "x": -23.045,
+        "y": 0.0,
+        "z": 25.913
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "bind_station_id": "S25",
+      "custom_props": {
+        "town": "waterfront",
+        "power": 60,
+        "zone": "lot",
+        "source": "waterfront"
+      },
+      "utilization": 0.14
+    }
+  ]
+}

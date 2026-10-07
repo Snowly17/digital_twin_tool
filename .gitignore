@@ -79,7 +79,15 @@ static/data/_runtime/
 #     携带如此体量。因此整目录排除，缺失时应用会自动降级（见 DEPLOY.md）
 #   · 需要完整功能时按 DEPLOY.md「数据集准备」自行放置
 #   · data/ 会原样留在本地，只是不进 Git —— 不要为了部署而删除它
-data/
+#
+# ⚠️ 必须是带前导斜杠的 /data/（只匹配仓库根目录的 data/）。
+#    原先写的是 `data/`，而 gitignore 语法里**没有前导斜杠的模式会匹配任意层级**，
+#    于是它同时命中了 static/data/ —— 导致：
+#      · static/data/demo_town.json（内置示例小镇，应用运行时必需）
+#      · static/data/shenzhen_*.json（深圳场景数据）
+#    全部被排除在版本库之外，从未上传。线上因此缺少场景数据。
+#    用 `git check-ignore -v <file>` 可验证命中的是哪条规则。
+/data/
 
 # 本地工具脚本（非核心）
 tools/optimize_word_document.bat
