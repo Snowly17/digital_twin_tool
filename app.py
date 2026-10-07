@@ -6940,6 +6940,76 @@ def generate_scene_html():
         #fps-monitor .fps-ok {{ color: #fcc419; font-weight: 700; }}
         #fps-monitor .fps-bad {{ color: #ff6b6b; font-weight: 700; }}
         
+        /* ============================================================
+           🔥 底部按钮行（flex 容器）
+           ============================================================ */
+        .bottom-btn-row {{
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            max-width: calc(100% - 40px);
+            pointer-events: auto;
+        }}
+
+        .bottom-btn-row > * {{
+            position: static !important;
+            left: auto !important;
+            right: auto !important;
+            top: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+        }}
+
+        .bottom-btn-row > button {{
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: 0.25s;
+            backdrop-filter: blur(10px);
+            font-family: var(--font-main);
+        }}
+
+        .bottom-btn-row #prediction-btn,
+        .bottom-btn-row .voice-btn,
+        .bottom-btn-row .timeline-open-btn,
+        .bottom-btn-row #tour-edit-btn,
+        .bottom-btn-row #ponder-btn {{
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 15px;
+            background: rgba(10, 14, 23, 0.88);
+        }}
+
+        .bottom-btn-row .tour-btn {{
+            width: auto;
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            background: rgba(10, 14, 23, 0.88);
+        }}
+
+        #tour-progress {{
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99;
+            display: none;
+            gap: 6px;
+        }}
+        
         /* ============ 🎬 一键演示 ============ */
         #demo-btn {{
             position: absolute;
@@ -7308,11 +7378,17 @@ def generate_scene_html():
             <div id="demo-progress"></div>
             <button id="demo-btn" title="一键演示全流程">▶️ 一键演示</button>
             <button id="demo-stop-btn" title="停止演示">⏹ 停止演示</button>
-            
-            <!-- 6.9 自动导览按钮 -->
-            <button id="tour-btn" class="tour-btn">🎥 自动导览</button>
-            <!-- 6.6 AI语音播报按钮 -->
-            <button id="voice-btn" class="voice-btn" title="播报场景概况">🔊</button>
+
+            <!-- 底部按钮行（flex 容器，永不裁） -->
+            <div class="bottom-btn-row">
+                <button id="prediction-btn" title="预测未来 12 小时" style="display: none;">🔮</button>
+                <button id="voice-btn" class="voice-btn" title="播报场景概况">🔊</button>
+                <button id="timeline-open-btn" class="timeline-open-btn" title="历史回放" style="display: none;">📽️</button>
+                <button id="tour-btn" class="tour-btn">🎥 自动导览</button>
+                <button id="tour-edit-btn" title="编辑导览路径">✏️</button>
+                <button id="ponder-btn" title="思索 · 交互式教学课程目录">💭</button>
+            </div>
+
             <div id="tour-progress">
                 <div class="dot" data-idx="0"></div>
                 <div class="dot" data-idx="1"></div>
@@ -7388,16 +7464,6 @@ def generate_scene_html():
                 </div>
             </div>
             <button id="timeline-open-btn" class="timeline-open-btn" title="历史回放" style="display: none;">📽️</button>
-            
-            <!-- 🔮 预测图层按钮 -->
-            <button id="prediction-btn" title="预测未来 12 小时" style="display: none;">🔮</button>
-            <div id="prediction-badge">🔮 未来 12 小时预测视图</div>
-            
-            <!-- 6.9+ 编辑导览路径按钮 -->
-            <button id="tour-edit-btn" title="编辑导览路径">✏️</button>
-
-            <!-- 💭 思索：交互式教学入口（与导览/回放按钮同排，放在编辑导览右侧） -->
-            <button id="ponder-btn" title="思索 · 交互式教学课程目录">💭</button>
 
             <!-- 思索课程目录弹层（由 static/js/ponder.js 动态填充，故不含 f-string 逻辑） -->
             <div id="ponder-menu" style="display: none;"></div>
